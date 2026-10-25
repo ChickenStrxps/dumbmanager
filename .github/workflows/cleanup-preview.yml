@@ -1,0 +1,36 @@
+name: remove-private-bootstrap-metadata
+on:
+  workflow_dispatch:
+    inputs:
+      run_ids:
+        required: true
+        type: string
+permissions:
+  actions: write
+  contents: read
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Remove completed setup run records
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_IDS: ${{ inputs.run_ids }}
+        shell: python
+        run: |
+          import json,os,subprocess,time
+          repo=os.environ['GITHUB_REPOSITORY'];current=int(os.environ['GITHUB_RUN_ID'])
+          meta=json.loads(subprocess.check_output(['gh','api','repos/'+repo],text=True))
+          assert meta['private'] is True,'Only private bootstrap records may be removed.'
+          ids=json.loads(os.environ['RUN_IDS'])
+          assert isinstance(ids,list) and len(ids)<=30 and all(type(n) is int and n!=current for n in ids)
+          for id in ids:
+              route='repos/'+repo+'/actions/runs/'+str(id)
+              for _ in range(20):
+                  row=json.loads(subprocess.check_output(['gh','api',route],text=True))
+                  if row['status']=='completed':break
+                  time.sleep(3)
+              assert row['status']=='completed','Setup is still running.'
+              subprocess.run(['gh','api',route,'--method','DELETE'],check=True)
+          print('Removed',len(ids),'completed private bootstrap records. Release artifacts remain in the draft release.')

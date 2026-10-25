@@ -1,0 +1,108 @@
+name: private-preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUTF8: '1'
+      PYTHONPATH: ${{ github.workspace }}/backend;${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Source inventory and syntax
+        run: python -B tools/verify_public.py
+      - name: API tests
+        run: python -B tools/test_suite.py api
+      - name: Host tests
+        run: python -B tools/test_suite.py host
+      - name: Disposable first run
+        run: python -B tools/host_smoke.py
+      - name: Browser tools
+        run: python -m pip install playwright==1.64.1
+      - name: Disposable browser navigation
+        run: python -B tools/public_browser_smoke.py
+      - name: Select source commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BOOTSTRAP_MESSAGE: ${{ github.event.head_commit.message }}
+        shell: python
+        run: |
+          import json,os,subprocess
+          repo=os.environ['GITHUB_REPOSITORY'];old=os.environ['GITHUB_SHA']
+          meta=json.loads(subprocess.check_output(['gh','api','repos/'+repo],text=True))
+          bootstrap=os.environ.get('BOOTSTRAP_MESSAGE','').startswith('Prepare private source preview:')
+          sha=old
+          if bootstrap:assert meta['private'] is True,'History cleanup is private setup only.'
+          env=os.environ.copy()
+          env.update(GIT_AUTHOR_NAME='DumbManager contributors',GIT_AUTHOR_EMAIL='dumbmanager@users.noreply.github.com',GIT_COMMITTER_NAME='DumbManager contributors',GIT_COMMITTER_EMAIL='dumbmanager@users.noreply.github.com')
+          tree=subprocess.check_output(['git','rev-parse','HEAD^{tree}'],text=True).strip()
+          if bootstrap:
+              sha=subprocess.check_output(['git','commit-tree',tree],input='Start the DumbManager source preview\n',env=env,text=True).strip()
+              subprocess.run(['git','push','origin',sha+':refs/heads/main','--force-with-lease=refs/heads/main:'+old],check=True)
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as f:f.write('PUBLIC_SOURCE_SHA='+sha+'\n')
+          print('Clean source commit:',sha)
+      - name: Build tools
+        run: python -m pip install -r packaging/requirements-build.txt
+      - name: Candidate EXE
+        run: python -m PyInstaller --noconfirm --clean packaging/DumbManager.spec
+      - name: Frozen executable first run
+        run: python -B tools/frozen_smoke.py
+      - name: Matching complete source ZIP and checksums
+        shell: python
+        run: |
+          import hashlib,os,pathlib,subprocess
+          out=pathlib.Path('dist');out.mkdir(exist_ok=True)
+          sha=os.environ['PUBLIC_SOURCE_SHA']
+          archive=out/('DumbManager-source-'+sha[:12]+'.zip')
+          subprocess.run(['git','archive','--format=zip','--prefix=DumbManager/','--output='+str(archive),sha],check=True)
+          files=[out/'DumbManager.exe',archive]
+          (out/'SHA256SUMS.txt').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in files))
+          (out/'SOURCE-COMMIT.txt').write_text(sha+'\nUnsigned preview; clean-install validation pending.\n')
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: private-preview-${{ github.sha }}
+          path: dist/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Save a private draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import json,os,pathlib,subprocess
+          repo=os.environ['GITHUB_REPOSITORY'];sha=os.environ['PUBLIC_SOURCE_SHA']
+          meta=json.loads(subprocess.check_output(['gh','api','repos/'+repo],text=True))
+          out=pathlib.Path('dist');tag='preview-'+sha[:12]
+          notes=out/'RELEASE-NOTES.md'
+          notes.write_text('Windows source preview. Unsigned executable; clean-machine and live-provider testing remain pending.\n\nIncludes the matching complete source ZIP, SHA256 checksums and a hosted executable start/stop report.\n\nSource commit: '+sha+'\n',encoding='utf-8')
+          assets=[str(p) for p in out.iterdir() if p.is_file() and p.name!='RELEASE-NOTES.md']
+          subprocess.run(['gh','release','create',tag,'--repo',repo,'--target',sha,'--draft','--prerelease','--title','DumbManager Windows preview','--notes-file',str(notes),*assets],check=True)
+      - name: Remove private bootstrap run metadata
+        if: startsWith(github.event.head_commit.message, 'Prepare private source preview:')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import json,os,subprocess
+          repo=os.environ['GITHUB_REPOSITORY']
+          runs=json.loads(subprocess.check_output(['gh','api','repos/'+repo+'/actions/runs?per_page=100'],text=True))
+          old_setup={40220053559,40220448529,40221024624}
+          ids=[r['id'] for r in runs['workflow_runs'] if r['status']=='completed' and (r['id'] in old_setup or r.get('head_commit',{}).get('message','').startswith('Prepare private source preview:'))]+[int(os.environ['GITHUB_RUN_ID'])]
+          subprocess.run(['gh','api','repos/'+repo+'/actions/workflows/cleanup-preview.yml/dispatches','-f','ref=main','-f','inputs[run_ids]='+json.dumps(ids)],check=True)

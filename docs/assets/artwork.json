@@ -1,0 +1,26 @@
+{
+  "little-world": {
+    "bytes": 357631,
+    "size": [
+      1000,
+      390
+    ],
+    "frames": 60,
+    "duration_ms": 4800,
+    "loop": 0,
+    "seam_mean_channel_delta": 1.325,
+    "sha256": "49dc9ea12f680d13003484613fe6b7d9272d60adfc25c59973f978b552d5d725"
+  },
+  "bridge": {
+    "bytes": 63186,
+    "size": [
+      1000,
+      116
+    ],
+    "frames": 60,
+    "duration_ms": 4800,
+    "loop": 0,
+    "seam_mean_channel_delta": 0.332,
+    "sha256": "069ffd7c7f6b0528bcef6ccd2e786a0f2d6eaab667f57b5010cc48d5b081b2b0"
+  }
+}

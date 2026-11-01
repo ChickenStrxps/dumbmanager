@@ -117,8 +117,8 @@
     },
     {
       "path": "backend/dumbapi_core/bridge.py",
-      "bytes": 24231,
-      "sha256": "160821ee4faf6229dab4b1d44f268349b9592d6eaf5532e8e4a5834d561143e6",
+      "bytes": 24303,
+      "sha256": "4341ed56129ae6b39505f8fc76a4218fcd7ccda28b6c297f4528c356ea52b0b4",
       "origin": "core"
     },
     {
@@ -138,6 +138,12 @@
       "bytes": 2981,
       "sha256": "56ee454ab00d1df6dec48464750059265b3341ca80a5f56dfab80ae31c5194d5",
       "origin": "core"
+    },
+    {
+      "path": "backend/dumbapi_core/bridge_followups.py",
+      "origin": "public-maintenance",
+      "bytes": 3544,
+      "sha256": "be3fde3eab2dab9ba4533f1a75f1dfc7de79d44c7d9e8a24f272930e26d6e090"
     },
     {
       "path": "backend/dumbapi_core/bridge_research.py",
@@ -195,8 +201,8 @@
     },
     {
       "path": "backend/dumbapi_core/discord_bridge.py",
-      "bytes": 34758,
-      "sha256": "b5dc8dd7ce478bcc106cc59bf8238958d942235d5da102fa8aa1c0ce6147c6bf",
+      "bytes": 43667,
+      "sha256": "bf02bccc517d6da6861da672083867a9fcf8f8a443c91c1bfdbfc9130d551962",
       "origin": "core"
     },
     {
@@ -464,6 +470,12 @@
       "origin": "original-art"
     },
     {
+      "path": "docs/discord-followups.md",
+      "origin": "public-maintenance",
+      "bytes": 1532,
+      "sha256": "6dd390dd7f400d5e832601296ecf52625ac814173c6b9d32e8a96131e7e0eb3d"
+    },
+    {
       "path": "docs/discord-repro-brief.md",
       "origin": "public-maintenance",
       "bytes": 1181,
@@ -531,8 +543,8 @@
     },
     {
       "path": "tests/api/test_bridge.py",
-      "bytes": 15273,
-      "sha256": "d99e918a06526ab4f95f718003333f3e5f62126d8dcaeab26907f98d17901460",
+      "bytes": 17070,
+      "sha256": "0ecef9651b83bf6c4da20ad0f1424d106dc2fcbb28ee29f4449b7a3f4d2dc75f",
       "origin": "synthetic-tests"
     },
     {
@@ -573,8 +585,8 @@
     },
     {
       "path": "tests/api/test_discord_bridge.py",
-      "bytes": 22198,
-      "sha256": "e581af09708ff57fdbf78364cb0ce1aa503d255a00cd2f7c87620d970ad8bb55",
+      "bytes": 28242,
+      "sha256": "09f169cfcc502d7cc9841b45f78a96625261663e37e5ca5b901a2ed2772a7793",
       "origin": "synthetic-tests"
     },
     {
@@ -783,8 +795,8 @@
     },
     {
       "path": "web/bridge.js",
-      "bytes": 8370,
-      "sha256": "481dde3867269f6fc4eb59657329a803456305da5ea24654df6e5a6c8f6f2e71",
+      "bytes": 8473,
+      "sha256": "7a11e67bcb323538dc442e81d2ad7b69b694179c1951631651a1bff7b0c80411",
       "origin": "host-asset"
     },
     {

@@ -96,6 +96,27 @@ class DiscordTest(unittest.TestCase):
         self.assertNotIn('ASCII fish reef',text)
         self.assertIn('Unknown',text)
 
+    def test_followup_review_save_and_cross_channel_inbox(self):
+        row=self.draft();response,_=self.click(row,'followedit')
+        self.assertEqual(response['type'],9)
+        fields=[{'type':4,'custom_id':'note','value':'check later'},{'type':4,'custom_id':'excerpt','value':'reviewed excerpt'}]
+        response,_=self.click(row,'followreview',kind=5,components=fields)
+        self.assertIn('reviewed excerpt',str(response))
+        row=self.bridge.get(row['id'],'discord:123456789')
+        response,_=self.click(row,'followsave')
+        self.assertIn('Captured excerpt (not live)',response['data']['content'])
+        inbox=self.value(channel_id='222222222',data={'name':'dumbbridge','type':1,'options':[{'name':'inbox','value':True}]})
+        response,_=self.receive(inbox)
+        self.assertEqual(response['data']['flags'],64)
+        self.assertIn('check later',str(response))
+        self.assertNotIn('reviewed excerpt',str(response))
+        self.assertIsNone(self.bridge.get(row['id'],'discord:123456789').get('followup_pending'))
+        self.assertEqual(response['data']['allowed_mentions'],{'parse':[]})
+        opts=self.bridge.options()
+        self.bridge.configure(application_id=opts['application_id'],public_key=opts['public_key'],users='123456789',channels='987654321',enabled=True,expected_version=opts['version'])
+        with self.assertRaises(APIError):self.receive(inbox)
+        with self.assertRaises(APIError):self.discord.dispatch(self.value(channel_id='222222222',type=3,data={'custom_id':f'db:brief:{row["id"]}:{row["version"]}'}),'discord:123456789','222222222')
+
     def test_brief_scope_and_stale_edit_recovery(self):
         row=self.draft()
         # App and guild checks are additional to actor/current channel checks.
@@ -121,6 +142,44 @@ class DiscordTest(unittest.TestCase):
         row=self.bridge.get(row['id'],row['actor'])
         self.click(row,'clearbriefrecovery');row=self.bridge.get(row['id'],row['actor'])
         self.assertIsNone(row['brief_recovery'])
+
+    def test_followup_atomic_cleanup_private_receipts_and_recreation(self):
+        row=self.draft()
+        # Save and clear pending review in the same transaction. A failure rolls back both.
+        fields=[{'type':18,'component':{'type':4,'custom_id':'note','value':'unique review note'}},
+                {'type':18,'component':{'type':4,'custom_id':'excerpt','value':'unique reviewed private excerpt'}}]
+        self.click(row,'followreview',kind=5,components=fields);row=self.bridge.get(row['id'],row['actor'])
+        view=panel(self.bridge,row)
+        labels=[c.get('label') for r in view['components'] for c in r['components']]
+        self.assertNotIn('Stash as Itch',labels)
+        original_put=self.bridge.manager.put
+        def fail_draft(db,kind,record):
+            if kind=='bridge_draft':raise APIError('Injected isolated rollback')
+            return original_put(db,kind,record)
+        with patch.object(self.bridge.manager,'put',side_effect=fail_draft):
+            response,_=self.click(row,'followsave')
+            self.assertIn('Injected isolated rollback',response['data']['content'])
+        with self.bridge.manager.db() as db:self.assertEqual(db.execute('SELECT COUNT(*) FROM bridge_followups').fetchone()[0],0)
+        self.assertIsNotNone(self.bridge.get(row['id'],row['actor'])['followup_pending'])
+        self.click(row,'followsave')
+        self.assertIsNone(self.bridge.get(row['id'],row['actor'])['followup_pending'])
+        with self.bridge.manager.db() as db:
+            saved=json.loads(db.execute('SELECT data FROM bridge_followups').fetchone()[0])
+            replay=''.join(r[0] for r in db.execute('SELECT response FROM bridge_events'))
+            self.assertNotIn('unique reviewed private excerpt',replay)
+        delete=f'fi:delete:{saved["id"]}:{saved["version"]}'
+        self.receive(self.value(type=3,data={'custom_id':delete}))
+        with self.bridge.manager.db() as db:
+            all_data=''.join(r[0] for r in db.execute('SELECT data FROM records'))+''.join(r[0] for r in db.execute('SELECT response FROM bridge_events'))
+            self.assertNotIn('unique reviewed private excerpt',all_data)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM bridge_followups').fetchone()[0],0)
+        # Recreating a bookmark creates a new identity, so prior controls cannot affect it.
+        row=self.bridge.get(row['id'],row['actor']);self.click(row,'followreview',kind=5,components=fields)
+        row=self.bridge.get(row['id'],row['actor']);self.click(row,'followsave')
+        with self.bridge.manager.db() as db:new=json.loads(db.execute('SELECT data FROM bridge_followups').fetchone()[0])
+        self.assertNotEqual(new['id'],saved['id'])
+        response,_=self.receive(self.value(type=3,data={'custom_id':delete}))
+        self.assertIn('not found',response['data']['content'])
 
     def test_native_signature_rejects_tampering_wrong_key_and_stale_time(self):
         body,headers=self.signed(self.value(type=1))
@@ -340,5 +399,27 @@ class DiscordTest(unittest.TestCase):
         self.discord.card_queue[row['id']]=(event,row['actor'],row['version'],time.monotonic())
         self.discord.render_cards()
         self.assertEqual(self.delivered,[])
+
+    def test_stale_and_deleted_note_submissions_return_private_recovery(self):
+        from dumbapi_core.bridge_followups import save,change,get
+        row=self.draft()
+        with self.bridge.manager.db() as db:
+            item=save(db,'333333333',row['actor'],row,{'note':'before','excerpt':'private capture'})
+            change(db,'333333333',row['actor'],item['id'],item['version'],'done')
+        note='keep my note ~~~ @everyone'
+        def submit():
+            return self.receive(self.value(type=5,data={'custom_id':f'fi:edited:{item["id"]}:{item["version"]}',
+                'components':[{'type':4,'custom_id':'note','value':note}]}))[0]
+        response=submit()
+        self.assertEqual(response['type'],4);self.assertEqual(response['data']['flags'],64)
+        self.assertEqual(response['data']['allowed_mentions'],{'parse':[]})
+        self.assertIn(note,response['data']['embeds'][0]['description'])
+        with self.bridge.manager.db() as db:
+            current=get(db,'333333333',row['actor'],item['id']);self.assertEqual(current['note'],'before')
+            change(db,'333333333',row['actor'],item['id'],current['version'],'delete')
+        response=submit();self.assertIn(note,response['data']['embeds'][0]['description'])
+        with self.bridge.manager.db() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM bridge_followups').fetchone()[0],0)
+            self.assertNotIn(note,' '.join(x[0] for x in db.execute('SELECT response FROM bridge_events')))
 
 if __name__=='__main__':unittest.main()

@@ -80,6 +80,48 @@ class DiscordTest(unittest.TestCase):
         if components is not None:data['components']=components
         return self.receive(self.value(type=kind,data=data),work)
 
+    def test_brief_private_controls_and_complete_file(self):
+        row=self.draft()
+        response,_=self.click(row,'brief')
+        self.assertEqual(response['type'],7)
+        row=self.bridge.get(row['id'],'discord:123456789')
+        response,_=self.click(row,'briefedit')
+        self.assertEqual(len(response['data']['components']),5)
+        response,_=self.click(row,'brieffile',work=True)
+        self.assertEqual(response['type'],6)
+        payload,file=self.delivered[-1]
+        self.assertEqual(payload['allowed_mentions'],{'parse':[]})
+        self.assertEqual(file['filename'],'repro-brief.md')
+        text=base64.b64decode(file['data']).decode('utf-8')
+        self.assertNotIn('ASCII fish reef',text)
+        self.assertIn('Unknown',text)
+
+    def test_brief_scope_and_stale_edit_recovery(self):
+        row=self.draft()
+        # App and guild checks are additional to actor/current channel checks.
+        stale_id=f'db:brief:{row["id"]}:{row["version"]}'
+        response,_=self.receive(self.value(type=3,guild_id='444444444',data={'custom_id':stale_id}))
+        self.assertIn('another app/server',response['data']['content'])
+        self.bridge.mutate(row['id'],row['actor'],{'discord_app':'444444444'},row['version'])
+        current=self.bridge.get(row['id'],row['actor'])
+        response,_=self.click(current,'brief')
+        self.assertIn('another app/server',response['data']['content'])
+        row=self.bridge.mutate(row['id'],row['actor'],{'discord_app':'333333333'},current['version'])
+        # A stale modal saves a separate recovery buffer, never overwrites current fields.
+        self.bridge.mutate(row['id'],row['actor'],{'notice':'new edit'},row['version'])
+        fields=[{'type':18,'component':{'type':4,'custom_id':'steps','value':'recovered\n'*140}}]
+        response,_=self.click(row,'briefedited',kind=5,components=fields)
+        current=self.bridge.get(row['id'],row['actor'])
+        self.assertEqual(current['brief_recovery']['steps'],'recovered\n'*140)
+        self.assertNotIn('steps',current.get('repro_brief',{}))
+        self.click(current,'briefrecovery')
+        payload,file=self.delivered[-1]
+        self.assertIn('recovered\n',base64.b64decode(file['data']).decode())
+        self.assertEqual(payload['allowed_mentions'],{'parse':[]})
+        row=self.bridge.get(row['id'],row['actor'])
+        self.click(row,'clearbriefrecovery');row=self.bridge.get(row['id'],row['actor'])
+        self.assertIsNone(row['brief_recovery'])
+
     def test_native_signature_rejects_tampering_wrong_key_and_stale_time(self):
         body,headers=self.signed(self.value(type=1))
         self.assertTrue(verify(self.public,headers['X-Signature-Ed25519'],headers['X-Signature-Timestamp'],body))
@@ -136,7 +178,7 @@ class DiscordTest(unittest.TestCase):
             users='123456789',enabled=False,expected_version=options['version'])
         self.discord.work(event)
         current=self.bridge.get(row['id'],row['actor'])
-        self.assertEqual(current['itch_id'],'');self.assertIn('no longer enabled',current['notice'])
+        self.assertEqual(current['itch_id'],'');self.assertEqual(current.get('notice'),row.get('notice'))
 
     def test_native_context_message_and_slash_replay_keep_private_source(self):
         value=self.value(data={'type':3,'name':'DumbBridge','target_id':'222222222','resolved':{'messages':{
@@ -275,5 +317,28 @@ class DiscordTest(unittest.TestCase):
                 self.assertEqual(json.load(response),{'type':1})
         finally:server.shutdown();server.server_close();server.discord.close();thread.join(timeout=5)
 
+
+    def test_queued_revocation_returns_no_private_draft(self):
+        with patch.object(self.discord,'queue_card'):row=self.draft()
+        before=dict(row)
+        self.delivered.clear()
+        _,event=self.click(row,'brieffile',work=False)
+        options=self.bridge.options();self.bridge.configure(application_id=options['application_id'],public_key=options['public_key'],users='222222222',enabled=True,expected_version=options['version'])
+        self.discord.work(event)
+        self.assertEqual(self.delivered,[])
+        self.assertEqual(self.bridge.get(row['id'],row['actor']),before)
+        with self.bridge.manager.db() as db:
+            receipt=db.execute('SELECT state,secret FROM bridge_events WHERE id=?',(event,)).fetchone()
+        self.assertEqual(receipt['state'],'done');self.assertIsNone(receipt['secret'])
+
+    def test_queued_card_revocation_skips_render_and_delivery(self):
+        with patch.object(self.discord,'queue_card'):row=self.draft()
+        self.delivered.clear()
+        with self.bridge.manager.db() as db:
+            event=db.execute("SELECT * FROM bridge_events WHERE task IS NOT NULL ORDER BY rowid LIMIT 1").fetchone()
+        options=self.bridge.options();self.bridge.configure(application_id=options['application_id'],public_key=options['public_key'],users='123456789',channels='222222222',enabled=True,expected_version=options['version'])
+        self.discord.card_queue[row['id']]=(event,row['actor'],row['version'],time.monotonic())
+        self.discord.render_cards()
+        self.assertEqual(self.delivered,[])
 
 if __name__=='__main__':unittest.main()

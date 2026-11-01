@@ -196,6 +196,14 @@ class Bridge:
             self.editable(row)
             return self.mutate(id,actor,{**value,'generation':'edited'},expected_version)
 
+    def edit_brief(self, id, actor, values, expected_version):
+        from .bridge_brief import clean_fields
+        with draft_lock(id):
+            row = self.get(id, actor)
+            brief = dict(row.get('repro_brief') or {})
+            brief.update(clean_fields(values))
+            return self.mutate(id, actor, {'repro_brief': brief, 'panel': 'brief'}, expected_version)
+
     @staticmethod
     def editable(row):
         if (row.get('stash_pending') and not row['itch_id']) or row.get('send_pending'):

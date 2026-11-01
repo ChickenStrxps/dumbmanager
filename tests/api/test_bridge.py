@@ -28,6 +28,34 @@ class BridgeTest(unittest.TestCase):
                 'url':'https://discord.com/channels/@me/987654321/123456789','message_id':'123456789',**overrides}
         return self.bridge.create(source,self.actor,'event-'+str(self.serial))
 
+    def test_repro_brief_is_explicit_versioned_and_portable(self):
+        from dumbapi_core.bridge_brief import render
+        row=self.draft(text='private @everyone\n```\nsecret')
+        empty=render(row)
+        self.assertNotIn('secret',empty)
+        self.assertIn('Unknown',empty)
+        edited=self.bridge.edit_brief(row['id'],self.actor,{'title':'Bug', 'steps':'1. Open\n```'},row['version'])
+        with self.assertRaises(APIError):self.bridge.edit_brief(row['id'],self.actor,{'title':'stale'},row['version'])
+        with self.assertRaises(APIError):self.bridge.edit_brief(row['id'],'discord:111111111',{},edited['version'])
+        self.assertNotIn('secret',render(Bridge(self.config).get(row['id'],self.actor)))
+        included=self.bridge.mutate(row['id'],self.actor,{'repro_brief':{**edited['repro_brief'],'include_source':True}},edited['version'])
+        self.assertIn('    secret',render(included))
+        self.assertNotIn('discord.com',render(included))
+        self.assertNotIn('cdn.',render(included))
+        self.assertEqual(render(included),render(included))
+        with self.assertRaises(APIError):self.bridge.edit_brief(row['id'],self.actor,{'steps':'??'*751},included['version'])
+
+    def test_repro_attachment_metadata_requires_source_opt_in(self):
+        from dumbapi_core.bridge_brief import render
+        row=self.draft(text='',attachments=[{'id':'777777777','filename':'folder/evidence.png','content_type':'image/png','url':'https://cdn.discordapp.com/attachments/111111111/777777777/evidence.png?secret=signed'}])
+        self.assertNotIn('evidence.png',render(row))
+        row['repro_brief']={'include_source':True}
+        full=render(row)
+        self.assertIn('evidence.png | image/png',full)
+        self.assertNotIn('folder/',full)
+        self.assertNotIn('secret=signed',full)
+        self.assertNotIn('cdn.discordapp.com',full)
+
     def test_registry_uses_real_shared_operations_and_configuration_is_offline(self):
         app=App(self.config)
         self.assertFalse(app.call('bridge.status')['configured'])

@@ -146,6 +146,12 @@
       "sha256": "be3fde3eab2dab9ba4533f1a75f1dfc7de79d44c7d9e8a24f272930e26d6e090"
     },
     {
+      "path": "backend/dumbapi_core/bridge_inspect.py",
+      "origin": "public-maintenance",
+      "bytes": 2880,
+      "sha256": "a5b8733529ead17fbc83ac7d337be5080bb6c0f5b6f944564946a2a5bf7ca3c2"
+    },
+    {
       "path": "backend/dumbapi_core/bridge_research.py",
       "bytes": 4097,
       "sha256": "51d143fd35cb2a8d8900164805378b426e7fa641fc72978273033e4c9f0eccb8",
@@ -201,8 +207,8 @@
     },
     {
       "path": "backend/dumbapi_core/discord_bridge.py",
-      "bytes": 43667,
-      "sha256": "bf02bccc517d6da6861da672083867a9fcf8f8a443c91c1bfdbfc9130d551962",
+      "bytes": 45453,
+      "sha256": "59cdbd1308455a3c1df6c501b93c0878e4da528394b1128f250e7a5d16a92c3e",
       "origin": "core"
     },
     {
@@ -470,6 +476,12 @@
       "origin": "original-art"
     },
     {
+      "path": "docs/discord-character-inspector.md",
+      "origin": "public-maintenance",
+      "bytes": 1956,
+      "sha256": "360d92aee96f6fe2812ea300df7b0ab78a59ab4b3bb7b566c699462971a5b3bb"
+    },
+    {
       "path": "docs/discord-followups.md",
       "origin": "public-maintenance",
       "bytes": 1532,
@@ -585,8 +597,8 @@
     },
     {
       "path": "tests/api/test_discord_bridge.py",
-      "bytes": 28242,
-      "sha256": "09f169cfcc502d7cc9841b45f78a96625261663e37e5ca5b901a2ed2772a7793",
+      "bytes": 31182,
+      "sha256": "82aaac55a7c93199a78cec15398669962878f84f6ba5045d0abeb52feb159ce2",
       "origin": "synthetic-tests"
     },
     {
@@ -795,8 +807,8 @@
     },
     {
       "path": "web/bridge.js",
-      "bytes": 8473,
-      "sha256": "7a11e67bcb323538dc442e81d2ad7b69b694179c1951631651a1bff7b0c80411",
+      "bytes": 8627,
+      "sha256": "acf1450ccc6e7bf15cd689ab0d026eb9a13a5ef032f0a26904daafcebc265f06",
       "origin": "host-asset"
     },
     {

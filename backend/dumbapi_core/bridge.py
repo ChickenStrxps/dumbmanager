@@ -76,6 +76,8 @@ class Bridge:
         self.config, self.manager = config, BridgeManager(config)
         with self.manager.db() as db:
             db.execute('CREATE TABLE IF NOT EXISTS bridge_bindings(scope TEXT PRIMARY KEY,data TEXT NOT NULL)')
+            from .bridge_followups import setup
+            setup(db)
 
     def options(self):
         with self.manager.db() as db:

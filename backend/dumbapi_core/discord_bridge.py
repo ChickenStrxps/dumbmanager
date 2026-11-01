@@ -18,7 +18,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote, urlencode
 
-from .bridge import ACK, BotKey, bounded, remote, snowflake
+from .bridge import ACK, BotKey, bounded, remote, snowflake, draft_lock
 from .browser_credentials import _crypt
 from .common import APIError, json_text, now
 
@@ -52,8 +52,9 @@ def commands():
     return [{'name':'DumbBridge','type':3,'integration_types':[0,1],'contexts':[0,1,2]},
         {'name':'dumbbridge','description':'Shape a message into an itch, research or T3 conversation.',
          'type':1,'integration_types':[0,1],'contexts':[0,1,2], 'options':[
-             {'name':'message','description':'Idea, research question or message to T3','type':3,'required':True,'max_length':2000},
-             {'name':'attachment','description':'Optional image or video evidence','type':11,'required':False}]}]
+             {'name':'message','description':'Idea, research question or message to T3','type':3,'required':False,'max_length':2000},
+             {'name':'attachment','description':'Optional image or video evidence','type':11,'required':False},
+             {'name':'inbox','description':'Open your private follow-ups instead','type':5,'required':False}]}]
 
 
 def register(bridge,confirm=False,guild_id=''):
@@ -163,10 +164,14 @@ def panel(bridge,row,card=None):
         controls.append(action_row(button(row,'send',('Retry same send' if row.get('send_pending') and not row['send_receipt'] else 'Send to '+(row['thread_title'][:40] or 'T3')),1,not row['thread_id'] or bool(row['send_receipt'])),
                                   button(row,'threads','Choose thread',disabled=bool(row.get('send_pending'))),button(row,'replies','Read latest replies',disabled=not row['thread_id'])))
         if row.get('t3_reply'):embed['fields'].append({'name':'Latest T3 reply (bounded)','value':row['t3_reply'][:1000]})
-    else:
+    elif mode!='followup':
         controls.append(action_row(button(row,'prepare','Stash as Itch',1,bool(row['itch_id'])),
                                   button(row,'research','Research with Jev'),button(row,'related','Find Related Itches'),button(row,'chat','Chat / Send to T3')))
-    if mode=='menu':controls.append(action_row(button(row,'brief','Make repro brief')))
+    if mode=='followup':
+        pending=row.get('followup_pending') or {}
+        embed={'title':'Review follow-up before saving', 'description':'Local private app data; no notification or automatic source refresh. The review is local temporary draft data. Confirm adds it to your inbox; Cancel clears the review copy.', 'fields':[{'name':'Note','value':pending.get('note') or '(none)'},{'name':'Captured excerpt (not live)','value':pending.get('excerpt') or '(omitted)'}], 'footer':{'text':'Attachments are omitted.'}, 'color':0xEB5ABC}
+        controls.append(action_row(button(row,'followedit','Edit note / excerpt'),button(row,'followsave','Confirm save follow-up',1),button(row,'followcancel','Cancel / clear excerpt')))
+    if mode=='menu':controls.append(action_row(button(row,'brief','Make repro brief'),button(row,'followedit','Save follow-up')))
     frozen=bool(row.get('send_pending')) or bool(row.get('stash_pending')) and not row['itch_id']
     controls.append(action_row(button(row,'edit','Edit intake',disabled=bool(row['itch_id']) or frozen),
                               button(row,'save','Retry same stash' if row.get('stash_pending') and not row['itch_id'] else 'Save to Stashed',1,bool(row['itch_id']) or bool(row.get('send_pending'))),
@@ -204,6 +209,35 @@ def brief_modal(row):
         {'type':18,'label':label,'component':{'type':4,'custom_id':key,'style':1 if key=='title' else 2,
          'value':brief.get(key,''),'max_length':200 if key=='title' else 1500,'required':False}} for key,label in FIELDS]}}
 
+
+def follow_modal(row):
+    pending=row.get('followup_pending') or {}
+    return {'type':9,'data':{'custom_id':f'db:followreview:{row["id"]}:{row["version"]}', 'title':'Prepare follow-up', 'components':[
+        {'type':18,'label':'Note (optional)','component':{'type':4,'custom_id':'note','style':1,'value':pending.get('note',''),'max_length':200,'required':False}},
+        {'type':18,'label':'Optional excerpt: paste to consent','component':{'type':4,'custom_id':'excerpt','style':2,'value':pending.get('excerpt',''),'max_length':500,'required':False}}]}}
+
+def inbox_panel(db,app,actor,offset=0):
+    from .bridge_followups import listing, PAGE
+    rows,total,offset=listing(db,app,actor,offset)
+    components=[]
+    if rows:
+        components.append(action_row({'type':3,'custom_id':'fi:open:0','placeholder':'Open a follow-up', 'options':[
+            {'label':utf16_clip(r['note'] or 'Untitled follow-up',90), 'value':r['id'], 'description':r['status']+' / '+(r.get('channel_id') or 'unknown channel')} for r in rows]}))
+    components.append(action_row({'type':2,'style':2,'label':'Previous','custom_id':f'fi:list:{max(0,offset-PAGE)}','disabled':offset==0},
+        {'type':2,'style':2,'label':'Next','custom_id':f'fi:list:{offset+PAGE}','disabled':offset+PAGE>=total}))
+    return {'content':f'Private follow-ups: {total} stored, page starting {offset+1}. Local workspace must be reachable. Source access is not implied.', 'components':components,'embeds':[],'allowed_mentions':{'parse':[]}}
+
+def literal(text):
+    fence='~'*max(3,1+max((len(x) for x in re.findall(r'~+',text)),default=0))
+    return fence+'text\n'+text+'\n'+fence
+
+
+def follow_panel(row):
+    def b(action,label):return {'type':2,'style':2,'label':label,'custom_id':f'fi:{action}:{row["id"]}:{row["version"]}'}
+    content=('**Follow-up** - '+row['status']+'\nNote: '+(row['note'] or '(none)')+'\nCaptured excerpt (not live): '+(row['excerpt'] or '(omitted)')+
+             '\nCaptured: '+row['created_at']+'\nSource channel: '+(row.get('channel_id') or 'unknown')+' / server: '+(row.get('guild_id') or 'DM / unknown')+
+             '\nSource link may no longer work: '+(row.get('url') or '(unavailable)'))
+    return {'content':content,'embeds':[],'components':[action_row(b('edit','Edit note'),b('reopen' if row['status']=='done' else 'done','Reopen' if row['status']=='done' else 'Mark done'),b('delete','Delete bookmark')),action_row({'type':2,'style':2,'label':'Back to inbox','custom_id':'fi:list:0'})], 'allowed_mentions':{'parse':[]}}
 
 def form_values(data):
     out={}
@@ -268,7 +302,7 @@ class Discord:
             try:response,task=self.dispatch(value,actor,channel)
             except APIError as exc:
                 custom=str(value.get('data',{}).get('custom_id',''))
-                if not custom.startswith(('db:brief','db:clearbrief')):raise
+                if not (custom.startswith(('fi:','db:brief','db:clearbrief','db:follow')) or any(o.get('name')=='inbox' for o in value.get('data',{}).get('options',[]))):raise
                 response={'type':4,'data':{'flags':64,'content':str(exc)[:1400]+' Use the newest controls to retry; nothing was sent.','allowed_mentions':{'parse':[]}}};task=None
             if task and not self.slots.acquire(blocking=False):
                 return {'type':4,'data':{'content':'The bridge is busy. Your draft is kept; try again shortly.','flags':64,'allowed_mentions':{'parse':[]}}},None
@@ -276,7 +310,10 @@ class Discord:
                 if task:task={**task,'application_id':settings['application_id'],'guild_id':str(value.get('guild_id') or '')}
                 secret=base64.b64encode(_crypt(token.encode())).decode() if task else None
                 with self.bridge.manager.db() as db:
-                    db.execute('INSERT INTO bridge_events VALUES (?,?,?,?,?,?)',(event,digest,json_text(response),json_text(task) if task else None,secret,'queued' if task else 'done'))
+                    custom=str(value.get('data',{}).get('custom_id',''))
+                    private_bookmark=custom.startswith(('fi:','db:follow')) or any(o.get('name')=='inbox' and o.get('value') for o in value.get('data',{}).get('options',[]))
+                    cached={'type':4,'data':{'flags':64,'content':'This follow-up interaction was handled. Reopen /dumbbridge inbox:true for current items, or invoke the source action again.','allowed_mentions':{'parse':[]}}} if private_bookmark else response
+                    db.execute('INSERT INTO bridge_events VALUES (?,?,?,?,?,?)',(event,digest,json_text(cached),json_text(task) if task else None,secret,'queued' if task else 'done'))
                     # Keep a bounded replay ledger; retain queued/running work.
                     db.execute("DELETE FROM bridge_events WHERE id IN (SELECT id FROM bridge_events WHERE state NOT IN ('queued','running') ORDER BY rowid DESC LIMIT -1 OFFSET 2000)")
             except Exception:
@@ -296,6 +333,10 @@ class Discord:
                     'attachments':source.get('attachments',[])}
             elif data.get('name')=='dumbbridge' and data.get('type')==1:
                 options={o['name']:o.get('value') for o in data.get('options',[])}
+                if options.get('inbox'):
+                    if options.get('message') or options.get('attachment'):raise APIError('Choose inbox or message, not both.')
+                    with self.bridge.manager.db() as db:result=inbox_panel(db,value['application_id'],actor)
+                    return {'type':4,'data':{**result,'flags':64}},None
                 attachment=(data.get('resolved') or {}).get('attachments',{}).get(options.get('attachment'))
                 envelope={'text':options.get('message',''),'author_id':actor.split(':',1)[1], 'attachments':[attachment] if attachment else []}
             else:raise APIError('Unknown DumbBridge command.')
@@ -305,6 +346,36 @@ class Discord:
             if not row.get('discord_app'):row=self.bridge.mutate(row['id'],actor,{'discord_app':value['application_id']})
             return {'type':4,'data':{**panel(self.bridge,row),'flags':64}}, {'id':row['id'],'actor':actor,'action':'card'}
         if kind not in (3,5):raise APIError('Unsupported interaction type.')
+        custom=str(data.get('custom_id',''))
+        if custom.startswith('fi:'):
+            from .bridge_followups import get, change
+            app=value['application_id']
+            listmatch=re.fullmatch(r'fi:(list|open):([0-9]+)',custom)
+            if listmatch:
+                action,offset=listmatch.groups()
+                with self.bridge.manager.db() as db:
+                    result=inbox_panel(db,app,actor,int(offset)) if action=='list' else follow_panel(get(db,app,actor,(data.get('values') or [''])[0]))
+                return {'type':7,'data':result},None
+            match=re.fullmatch(r'fi:(edit|edited|done|reopen|delete):([a-f0-9]{32}):([0-9]+)',custom)
+            if not match:raise APIError('Unknown follow-up control.')
+            action,id,version=match.groups();version=int(version)
+            if action=='edited':
+                from .bridge_followups import clean
+                note=clean(form_values(data).get('note',''),200)
+                try:
+                    with self.bridge.manager.db() as db:result=follow_panel(change(db,app,actor,id,version,'edit',note))
+                except APIError:
+                    return {'type':4,'data':{'flags':64,'content':'NOT APPLIED: the follow-up changed or was deleted. Copy your submitted note below, then reopen the inbox.',
+                        'embeds':[{'title':'Your submitted note (recovery only)','description':literal(note or '(empty note)')}], 'allowed_mentions':{'parse':[]}}},None
+                return {'type':7,'data':result},None
+            with self.bridge.manager.db() as db:
+                row=get(db,app,actor,id)
+                if row['version']!=version:raise APIError('Follow-up changed. Reopen it from the inbox.','conflict',409)
+                if action=='edit':
+                    return {'type':9,'data':{'custom_id':f'fi:edited:{id}:{version}','title':'Edit follow-up note','components':[{'type':18,'label':'Note','component':{'type':4,'custom_id':'note','style':1,'value':row['note'],'max_length':200,'required':False}}]}},None
+                row=change(db,app,actor,id,version,'edit' if action=='edited' else action,form_values(data).get('note',''))
+                result=follow_panel(row) if row else inbox_panel(db,app,actor)
+            return {'type':7,'data':result},None
         match=re.fullmatch(r'db:([a-z]+):([a-f0-9]{32}):([0-9]+)',str(data.get('custom_id','')))
         if not match:raise APIError('Unknown DumbBridge control.')
         action,id,version=match.groups();version=int(version);row=self.bridge.get(id,actor)
@@ -316,10 +387,35 @@ class Discord:
                 from .bridge_brief import clean_fields
                 values=clean_fields(form_values(data))
                 row=self.bridge.mutate(id,actor,{'brief_recovery':values,'panel':'brief','notice':'Not applied: the draft changed. Your submitted edit is available as recovery Markdown.'},row['version'])
+            if kind==5 and action=='followreview':
+                values=form_values(data)
+                return {'type':4,'data':{'flags':64,'content':'NOT SAVED: the draft changed. Copy your submission below, then reopen Save follow-up.\nNote: '+utf16_clip(values.get('note',''),200)+'\nExcerpt: '+utf16_clip(values.get('excerpt',''),500),'allowed_mentions':{'parse':[]}}},None
             return {'type':7,'data':panel(self.bridge,row)},None
         if action=='clearbriefrecovery':
             row=self.bridge.mutate(id,actor,{'brief_recovery':None},version)
             return {'type':7,'data':panel(self.bridge,row)},None
+        if action=='followcancel':
+            row=self.bridge.mutate(id,actor,{'followup_pending':None,'panel':'menu','notice':'Follow-up review cleared. The original intake draft is unchanged.'},version)
+            return {'type':7,'data':panel(self.bridge,row)},None
+        if action=='followedit':return follow_modal(row),None
+        if action=='followreview':
+            from .bridge_followups import clean
+            values=form_values(data);pending={'note':clean(values.get('note',''),200),'excerpt':clean(values.get('excerpt',''),500)}
+            row=self.bridge.mutate(id,actor,{'panel':'followup','followup_pending':pending},version)
+            return {'type':7,'data':panel(self.bridge,row)},None
+        if action=='followsave':
+            from .bridge_followups import save
+            with draft_lock(id):
+                row=self.bridge.get(id,actor)
+                if row['version']!=version or row.get('panel')!='followup' or 'followup_pending' not in row:raise APIError('Review the newest follow-up before saving.','conflict',409)
+                with self.bridge.manager.db() as db:
+                    db.execute('BEGIN IMMEDIATE')
+                    row=self.bridge.manager.get(db,id,'bridge_draft')
+                    if row['version']!=version or row['actor']!=actor or row.get('discord_app')!=value['application_id']:raise APIError('Review the latest draft first.','conflict',409)
+                    item=save(db,value['application_id'],actor,row,row['followup_pending'])
+                    row.update(followup_pending=None,panel='menu',version=version+1,updated_at=now())
+                    self.bridge.manager.put(db,'bridge_draft',row)
+            return {'type':7,'data':follow_panel(item)},None
         if action=='briefedit':return brief_modal(row),None
         if action=='briefedited':
             row=self.bridge.edit_brief(id,actor,form_values(data),version)

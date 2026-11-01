@@ -43,7 +43,31 @@ class BridgeTest(unittest.TestCase):
         self.assertNotIn('discord.com',render(included))
         self.assertNotIn('cdn.',render(included))
         self.assertEqual(render(included),render(included))
+        included['repro_brief']['observed']='https://cdn.discordapp.com/attachments/1/2/file?secret=abc'
+        self.assertNotIn('secret=abc',render(included))
         with self.assertRaises(APIError):self.bridge.edit_brief(row['id'],self.actor,{'steps':'??'*751},included['version'])
+
+    def test_followups_owner_app_restart_lifecycle_and_cap(self):
+        from dumbapi_core.bridge_followups import save, get, change, listing
+        app='333333333';other='444444444';row=self.draft()
+        with self.manager.db() as db:item=save(db,app,self.actor,row,{'note':'check','excerpt':'reviewed'})
+        with self.manager.db() as db:again=save(db,app,self.actor,row,{'note':'not overwritten','excerpt':'other'})
+        self.assertEqual(item,again)
+        reopened=Bridge(self.config)
+        with reopened.manager.db() as db:
+            self.assertEqual(listing(db,app,self.actor,0)[1],1)
+            self.assertEqual(listing(db,other,self.actor,0)[1],0)
+            with self.assertRaises(APIError):get(db,app,'discord:111111111',item['id'])
+        with reopened.manager.db() as db:done=change(db,app,self.actor,item['id'],1,'done')
+        with reopened.manager.db() as db:
+            with self.assertRaises(APIError):change(db,app,self.actor,item['id'],1,'delete')
+        with reopened.manager.db() as db:opened=change(db,app,self.actor,item['id'],done['version'],'reopen')
+        with reopened.manager.db() as db:change(db,app,self.actor,item['id'],opened['version'],'delete')
+        self.assertEqual(self.bridge.get(row['id'],self.actor)['source'],row['source'])
+        with patch('dumbapi_core.bridge_followups.CAP',1):
+            with reopened.manager.db() as db:save(db,app,self.actor,row,{})
+            with reopened.manager.db() as db:
+                with self.assertRaises(APIError):save(db,app,self.actor,{**row,'id':'f'*32,'source':{**row['source'],'message_id':'2'}},{})
 
     def test_repro_attachment_metadata_requires_source_opt_in(self):
         from dumbapi_core.bridge_brief import render

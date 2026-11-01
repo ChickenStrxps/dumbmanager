@@ -80,6 +80,39 @@ class DiscordTest(unittest.TestCase):
         if components is not None:data['components']=components
         return self.receive(self.value(type=kind,data=data),work)
 
+    def test_inspector_is_private_transient_and_accepts_whitespace(self):
+        def counts():
+            with self.bridge.manager.db() as db:
+                names=[r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+                return {name:db.execute('SELECT COUNT(*) FROM "'+name+'"').fetchone()[0] for name in names}
+        before=counts()
+        value=self.value(data={'name':'dbinspect','type':1,'options':[{'name':'text','value':'private-inspector-source\t\r\n\u202e'}]})
+        with patch.object(self.bridge,'create',side_effect=AssertionError('No intake')),patch('dumbapi_core.discord_bridge.remote',side_effect=AssertionError('No outgoing request')):
+            for _ in range(2):
+                response,event=self.receive(value)
+                self.assertIsNone(event);self.assertEqual(response['data']['flags'],64)
+                self.assertEqual(response['data']['allowed_mentions'],{'parse':[]})
+                self.assertIn('U+202E',response['data']['content']);self.assertIn('CRLF: 1',response['data']['content'])
+                self.assertNotIn('private-inspector-source',response['data']['content'])
+            selected=self.value(data={'name':'Inspect characters','type':3,'target_id':'777777777','resolved':{'messages':{'777777777':{'id':'777777777','content':'\t \n'}}}})
+            self.assertIn('Tab: 1',self.receive(selected)[0]['data']['content'])
+        self.assertEqual(before,counts());self.assertEqual(self.delivered,[])
+
+    def test_inspector_errors_are_private_and_current_authorization_applies(self):
+        for data in [
+            {'name':'dbinspect','type':1,'options':[{'name':'text','value':'x'*4001}]},
+            {'name':'dbinspect','type':1,'options':[{'name':'text','value':''}]},
+            {'name':'Inspect characters','type':3,'target_id':'777777777','resolved':{'messages':{'777777777':{'id':'777777777'}}}},
+            {'name':'dbinspect','type':1,'options':[{'name':'text','value':'a'},{'name':'text','value':'b'}]}]:
+            response,event=self.receive(self.value(data=data));self.assertIsNone(event);self.assertEqual(response['data']['flags'],64)
+        command={'name':'dbinspect','type':1,'options':[{'name':'text','value':'\t'}]}
+        with self.assertRaises(APIError):self.receive(self.value(data=command,user={'id':'999999999'}))
+        with self.assertRaises(APIError):self.receive(self.value(data=command,application_id='999999999'))
+        value=self.value(data=command);body,headers=self.signed(value)
+        with self.assertRaises(APIError):self.discord.receive(body+b' ',headers)
+        options=self.bridge.options();self.bridge.configure(application_id=options['application_id'],public_key=options['public_key'],users='123456789',channels='222222222',enabled=True,expected_version=options['version'])
+        with self.assertRaises(APIError):self.receive(self.value(data=command))
+
     def test_brief_private_controls_and_complete_file(self):
         row=self.draft()
         response,_=self.click(row,'brief')
@@ -329,7 +362,7 @@ class DiscordTest(unittest.TestCase):
             command=json.loads(kwargs['body']);return json.dumps({'id':'123456789','name':command['name']}).encode()
         with patch('dumbapi_core.discord_bridge.BotKey.load',return_value='unit-fixture'),patch('dumbapi_core.discord_bridge.remote',side_effect=reply) as remote:
             result=register(self.bridge,True)
-        self.assertTrue(result['registered']);self.assertEqual(remote.call_count,2)
+        self.assertTrue(result['registered']);self.assertEqual(remote.call_count,4)
         self.assertTrue(all(c.kwargs['method']=='POST' for c in remote.call_args_list))
 
     def test_outbound_requests_identify_client_for_commands_and_interaction_replies(self):

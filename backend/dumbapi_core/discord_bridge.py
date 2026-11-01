@@ -50,6 +50,10 @@ def verify(public_key,signature,timestamp,body):
 
 def commands():
     return [{'name':'DumbBridge','type':3,'integration_types':[0,1],'contexts':[0,1,2]},
+        {'name':'Inspect characters','type':3,'integration_types':[0,1],'contexts':[0,1,2]},
+        {'name':'dbinspect','description':'Privately inspect invisible characters without saving a draft.',
+         'type':1,'integration_types':[0,1],'contexts':[0,1,2], 'options':[
+             {'name':'text','description':'Text to inspect; no history fetch, automatic repair or provider call','type':3,'required':True,'max_length':4000}]},
         {'name':'dumbbridge','description':'Shape a message into an itch, research or T3 conversation.',
          'type':1,'integration_types':[0,1],'contexts':[0,1,2], 'options':[
              {'name':'message','description':'Idea, research question or message to T3','type':3,'required':False,'max_length':2000},
@@ -293,6 +297,23 @@ class Discord:
         actor='discord:'+actor;event=snowflake(value.get('id',''));digest=hashlib.sha256(body).hexdigest()
         token=bounded(value.get('token',''),500)
         if not token or not re.fullmatch(r'[A-Za-z0-9_.-]+',token):raise APIError('Invalid interaction token.')
+        data=value.get('data') or {}
+        if value.get('type')==2 and data.get('name') in ('dbinspect','Inspect characters'):
+            # No intake, provider, worker, token storage or persistent replay copy.
+            from .bridge_inspect import inspect
+            text=None
+            if data.get('name')=='dbinspect' and data.get('type')==1:
+                options=data.get('options')
+                if isinstance(options,list) and len(options)==1 and isinstance(options[0],dict) and options[0].get('name')=='text':text=options[0].get('value')
+            elif data.get('name')=='Inspect characters' and data.get('type')==3:
+                target=data.get('target_id','')
+                message=(data.get('resolved') or {}).get('messages',{}).get(target)
+                if isinstance(message,dict) and message.get('id')==target and isinstance(target,str) and re.fullmatch(r'[0-9]{6,24}',target):text=message.get('content')
+            try:
+                if not isinstance(text,str):raise APIError('Discord did not supply text to inspect. Use /dbinspect text: to supply it explicitly; attachments are not read.')
+                response=inspect(text)
+            except APIError as exc:response={'type':4,'data':{'flags':64,'content':str(exc),'allowed_mentions':{'parse':[]}}}
+            return response,None
         with self.lock:
             with self.bridge.manager.db() as db:
                 saved=db.execute('SELECT * FROM bridge_events WHERE id=?',(event,)).fetchone()

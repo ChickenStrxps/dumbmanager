@@ -214,4 +214,15 @@ class BridgeTest(unittest.TestCase):
         self.assertTrue(base64.b64decode(card['data']).startswith(b'\x89PNG'))
 
 
+
+    def test_repro_log_indentation_and_blank_lines_are_preserved(self):
+        from dumbapi_core.bridge_brief import render
+        row=self.draft()
+        value='\n    Traceback:\r\n        failing_call()\n  '
+        row=self.bridge.edit_brief(row['id'],self.actor,{'observed':value,'expected':'   '},row['version'])
+        output=render(row)
+        self.assertIn('## Observed / error or log\n\n    \n        Traceback:\n            failing_call()\n      ',output)
+        self.assertIn('## Expected\n\n    Unknown',output)
+        self.assertEqual(self.bridge.get(row['id'],self.actor)['repro_brief']['observed'],value)
+
 if __name__=='__main__':unittest.main()

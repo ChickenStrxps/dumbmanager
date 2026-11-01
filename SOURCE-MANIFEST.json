@@ -130,8 +130,8 @@
     {
       "path": "backend/dumbapi_core/bridge_brief.py",
       "origin": "public-maintenance",
-      "bytes": 2570,
-      "sha256": "95e843156636928887f981299af37a1ee448c237246564df11d4096e3a951a5d"
+      "bytes": 2601,
+      "sha256": "4a78786f46eb13ec9e8996d94e64e516d8a50cc3c592a3993681fe8e832e8255"
     },
     {
       "path": "backend/dumbapi_core/bridge_cards.py",
@@ -531,8 +531,8 @@
     },
     {
       "path": "tests/api/test_bridge.py",
-      "bytes": 14633,
-      "sha256": "ef7f161ce9946d2602541595c50c0bdbe3766d0df1b66f122f050a90ef2aca8c",
+      "bytes": 15273,
+      "sha256": "d99e918a06526ab4f95f718003333f3e5f62126d8dcaeab26907f98d17901460",
       "origin": "synthetic-tests"
     },
     {

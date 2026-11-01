@@ -23,7 +23,8 @@ def render(row):
         return '\n'.join('    ' + line for line in value.replace('\r\n', '\n').replace('\r', '\n').split('\n'))
     parts = ['# Reproduction brief', '', 'User-authored fields; unknown means not provided.']
     for key, label in FIELDS:
-        parts += ['', '## ' + label, '', block(brief.get(key, '').strip() or 'Unknown')]
+        value=brief.get(key,'')
+        parts += ['', '## ' + label, '', block(value if value.strip() else 'Unknown')]
     parts += ['', '## Selected source snapshot', '']
     if brief.get('include_source'):
         parts += ['Explicitly included Discord message text (captured snapshot, not live):', '',

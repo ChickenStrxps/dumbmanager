@@ -26,6 +26,12 @@
       "origin": "new"
     },
     {
+      "path": ".gitmodules",
+      "bytes": 126,
+      "sha256": "ffae7ddd150a34372d57240b7c7028b5aa42f06fba310dba1b9afd040b58ac33",
+      "origin": "subproject-maintenance"
+    },
+    {
       "path": "CONTRIBUTING.md",
       "bytes": 741,
       "sha256": "39c532d84c6a415850192402d428c264618087704d67d85ad73deb958473274a",
@@ -45,9 +51,9 @@
     },
     {
       "path": "README.md",
-      "bytes": 3239,
-      "sha256": "b62de4380222aa1d563b40b93a18b01467ba27e28adfaa48758e95b9308ba5ed",
-      "origin": "new"
+      "bytes": 3749,
+      "sha256": "2c5c7653e7cd9af8133a6cf646afcdf07b6de75c6dd121d14ecaac70ad5a70e5",
+      "origin": "subproject-maintenance"
     },
     {
       "path": "app.py",
@@ -426,6 +432,12 @@
       "bytes": 2228,
       "sha256": "3a2037cc9a6c163a56009f151c6b01810692f18e1f3ec9fbe85f2b28e5da03be",
       "origin": "new"
+    },
+    {
+      "path": "docs/SUBPROJECTS.md",
+      "bytes": 1393,
+      "sha256": "ad50168d85c52ecbc6fe9103155f652d8918dfb34e328fff6451c4af69e1d356",
+      "origin": "subproject-maintenance"
     },
     {
       "path": "docs/assets/artwork.json",
@@ -944,5 +956,14 @@
       "origin": "host-asset"
     }
   ],
-  "excluded_by_default": true
+  "excluded_by_default": true,
+  "submodules": [
+    {
+      "path": "projects/dumb-lighting",
+      "url": "https://github.com/ChickenStrxps/dumb-lighting.git",
+      "commit": "b43f842238c81c4c03a9da6cfe5e85be5de22c03",
+      "optional": true,
+      "visibility": "private"
+    }
+  ]
 }

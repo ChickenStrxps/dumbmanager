@@ -55,3 +55,14 @@ Prefer still images? [Aquarium](docs/assets/little-world.png) · [Bridge](docs/a
 All setup steps above work without playing either animation.
 
 [Setup details](docs/SETUP.md) · [Build and checks](docs/BUILD.md) · [Contributing](CONTRIBUTING.md)
+
+### Subprojects
+
+[DumbLighting](https://github.com/ChickenStrxps/dumb-lighting) pairs six SignalRGB
+lighting presets with a quiet Windows app switcher. It has its own repository,
+pull requests and checks; this repository pins its version at
+`projects/dumb-lighting` as a Git submodule.
+
+The lighting repository is private and requires separate access. It is optional:
+DumbManager runs and builds without initializing it. See
+[subproject setup](docs/SUBPROJECTS.md) for selective checkout and version updates.

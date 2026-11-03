@@ -44,6 +44,12 @@ def main():
                 page.locator('[data-tool-tab=inspiration]').click()
                 page.reload();page.wait_for_function("()=>typeof appReady!=='undefined'&&appReady")
                 assert page.locator('[data-tool-tab=inspiration]').get_attribute('aria-selected')=='true'
+                page.locator('[data-view=plugins]').first.click()
+                page.wait_for_selector('.plugin-card')
+                assert page.locator('.plugin-family').count()==3
+                page.reload();page.wait_for_function("()=>typeof appReady!=='undefined'&&appReady")
+                page.wait_for_selector('.plugin-card')
+                assert page.locator('[data-plugin-category=context]').is_visible()
                 (ROOT/'dist').mkdir(exist_ok=True)
                 for width in (1280,390,320):
                     page.set_viewport_size({'width':width,'height':900})

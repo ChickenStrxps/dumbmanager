@@ -56,6 +56,13 @@ All setup steps above work without playing either animation.
 
 [Setup details](docs/SETUP.md) · [Build and checks](docs/BUILD.md) · [Contributing](CONTRIBUTING.md)
 
+### Plugins
+
+The **Plugins** page puts starred Dumb apps first, with project-aware MCP, API and
+library discovery, a saved tool shelf and an explicit install request to the T3
+thread selected in **Working on**. Local package imports keep separate app
+requirements visible. See [Plugins setup and limits](docs/plugins.md).
+
 ### Subprojects
 
 [DumbLighting](https://github.com/ChickenStrxps/dumb-lighting) pairs six SignalRGB

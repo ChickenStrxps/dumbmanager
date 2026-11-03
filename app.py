@@ -116,6 +116,7 @@ def make_server(port=8783, config=None):
             allowed.update({"/learning.js", "/learning.css"})
             allowed.update({"/research.js", "/research.css"})
             allowed.update({"/inspiration.js", "/inspiration.css"})
+            allowed.update({"/plugins.js", "/plugins.css", "/plugin-turtles.js"})
             if path not in allowed:
                 return self.send(404, {"error": "Not found"})
             file = ROOT / "web" / path.lstrip("/")
@@ -178,11 +179,15 @@ def make_server(port=8783, config=None):
                     name, args = value.get("name", ""), value.get("args", {})
                     if not isinstance(name, str) or not isinstance(args, dict):
                         raise APIError("Expected a named capability and object arguments.")
-                    if not (name.startswith(("manager.", "ai.")) or name in ALLOWED):
+                    if not (name.startswith(("manager.", "ai.", "plugins.")) or name in ALLOWED):
                         raise APIError("That operation is not exposed by this UI.", "forbidden", 403)
                     from dumbapi_core.t3_distributions import request_target
                     with request_target(value.get('t3_target')):
-                        result = backend.call(name, args, value.get("idempotency_key"))
+                        if name.startswith('plugins.'):
+                            from dumbapi_core.manager_plugins import Plugins
+                            result = Plugins(backend.config).call(name,args)
+                        else:
+                            result = backend.call(name, args, value.get("idempotency_key"))
                     if name == "manager.capture":
                         replay.finish(result["id"])
                     self.send(200, result)

@@ -51,15 +51,15 @@
     },
     {
       "path": "README.md",
-      "bytes": 4052,
-      "sha256": "1f88dc0ebe74c8f1180602d20878ef2bceda909b6936be020edd9727a34d36b8",
-      "origin": "subproject-maintenance"
+      "bytes": 4375,
+      "sha256": "be4a82ff3d968f865732daafbd30dd19f3e4a236fcc83fb6dbdae38be9245b61",
+      "origin": "plugins-page"
     },
     {
       "path": "app.py",
-      "bytes": 15357,
-      "sha256": "8bf74079c412a4f3d06f89ce9d7d713f1bee2c4487f8d5e6ec7d5712ec21444c",
-      "origin": "host"
+      "bytes": 15695,
+      "sha256": "53ad3ddb143d45c845502c133d95e67b21f8d56fa107fdfcbfc0677695f14b9b",
+      "origin": "plugins-page"
     },
     {
       "path": "backend/client.py",
@@ -254,6 +254,12 @@
       "origin": "core"
     },
     {
+      "path": "backend/dumbapi_core/manager_plugins.py",
+      "bytes": 12199,
+      "sha256": "5036c575e2df7928042c45e96fd44301ae8fd679a69c79e4f73d84877f96cd6b",
+      "origin": "plugins-page"
+    },
+    {
       "path": "backend/dumbapi_core/manager_posts.py",
       "bytes": 2352,
       "sha256": "948dba97b92890e6b8851faff3a19bc32ba6927c3054bf478ebff7a4783d61fe",
@@ -318,6 +324,12 @@
       "bytes": 2444,
       "sha256": "3bc4617dcf8b32c5802417320b8d35f5e1c455805efa1420e7ad410aaeff0a59",
       "origin": "core"
+    },
+    {
+      "path": "backend/dumbapi_core/plugin-catalog.json",
+      "bytes": 2512,
+      "sha256": "2bb62da107b18e93b8de877f4291ea138b168a8069c7a0d257f75f47b37e834d",
+      "origin": "plugins-page"
     },
     {
       "path": "backend/dumbapi_core/registry.py",
@@ -458,6 +470,18 @@
       "origin": "original-art"
     },
     {
+      "path": "docs/assets/dumbvoice-after.png",
+      "bytes": 14293,
+      "sha256": "07f381096266085807c115211c435e5aa9baa5af8a24f96eb361f3673f71ee87",
+      "origin": "subproject-maintenance"
+    },
+    {
+      "path": "docs/assets/dumbvoice-before.png",
+      "bytes": 9574,
+      "sha256": "1b457b359557112c032c5c2158fe7bfb1eebc3f9ddf5c11ce12eff48431a8de9",
+      "origin": "subproject-maintenance"
+    },
+    {
       "path": "docs/assets/little-world.gif",
       "bytes": 357631,
       "sha256": "49dc9ea12f680d13003484613fe6b7d9272d60adfc25c59973f978b552d5d725",
@@ -468,6 +492,42 @@
       "bytes": 33549,
       "sha256": "ef8436d038ebd425df43d6f6a28cad3f729920cc41cafaf665a35b7d25f06aff",
       "origin": "original-art"
+    },
+    {
+      "path": "docs/assets/plugins-after.png",
+      "bytes": 413194,
+      "sha256": "c37bd0fc476a7426fe279fd295d888bd421115b9a470cca0b389c8706cc5a2c8",
+      "origin": "plugins-page"
+    },
+    {
+      "path": "docs/assets/plugins-before.png",
+      "bytes": 305352,
+      "sha256": "ed7b6a1541fa1d1e4b03209d39f16adf42a030661234718da2ff1a3634034c26",
+      "origin": "plugins-page"
+    },
+    {
+      "path": "docs/assets/plugins-evidence.json",
+      "bytes": 2050,
+      "sha256": "9e5398a29d3d60f35a183eaf183b2bb4d4503c0f3701e092cff846e5387d0508",
+      "origin": "plugins-page"
+    },
+    {
+      "path": "docs/assets/plugins-install.png",
+      "bytes": 234817,
+      "sha256": "5f4e70ec3a4e92f141e8144592f530be8b5564c1df32ca9210ba121e8aba4f87",
+      "origin": "plugins-page"
+    },
+    {
+      "path": "docs/assets/plugins-motion.gif",
+      "bytes": 1459663,
+      "sha256": "9234ddbbff4b763100c1bf36864adfda7bdfc498ae1680a8c7ab768045ddc44b",
+      "origin": "plugins-page"
+    },
+    {
+      "path": "docs/plugins.md",
+      "bytes": 2777,
+      "sha256": "5b7e28bfbc86d2771b8c103937b1f537ec7626a7e44446ff753c7e844e67a59b",
+      "origin": "plugins-page"
     },
     {
       "path": "hotkeys.py",
@@ -501,9 +561,9 @@
     },
     {
       "path": "packaging/DumbManager.spec",
-      "bytes": 872,
-      "sha256": "fe3135c0da4544e1d3be4a744854cc27ce4e42f83b4f2746059c7945d9dced7b",
-      "origin": "new"
+      "bytes": 894,
+      "sha256": "1597ef97cc83c637ce503e251ee14055ca8f15f58855405b7720a952403b7c5c",
+      "origin": "plugins-page"
     },
     {
       "path": "packaging/requirements-build.txt",
@@ -668,6 +728,12 @@
       "origin": "synthetic-tests"
     },
     {
+      "path": "tests/api/test_plugins.py",
+      "bytes": 3157,
+      "sha256": "84894758489993d6c6973d209d539e06e8e9f4dfa80c84fb6fd5a250bf64e6b5",
+      "origin": "plugins-page"
+    },
+    {
       "path": "tests/api/test_t3.py",
       "bytes": 9978,
       "sha256": "2549805dc84d75ade13997719da95a90f308edbf324d76543caac0cbe0782aa9",
@@ -741,9 +807,9 @@
     },
     {
       "path": "tools/public_browser_smoke.py",
-      "bytes": 3907,
-      "sha256": "92d612881af2c121de6cba7b1dcac64806eee1d0eca36ad0cbe2d89be86db418",
-      "origin": "new"
+      "bytes": 4331,
+      "sha256": "f4428d9eae8fbe68cd10f03fce21cdd3bc885870c26c560bc590099e2075bb79",
+      "origin": "plugins-page"
     },
     {
       "path": "tools/test_suite.py",
@@ -765,15 +831,15 @@
     },
     {
       "path": "web/app.js",
-      "bytes": 68548,
-      "sha256": "72d96961a2c095384fc5378bb6836e9aaa634fa3ed0e2ae29b559000b422a941",
-      "origin": "host-asset"
+      "bytes": 68912,
+      "sha256": "1098d69b52486112b7733b317b3bd19336db5b64becb622101effc7c3f8d4a97",
+      "origin": "plugins-page"
     },
     {
       "path": "web/aquarium.js",
-      "bytes": 30407,
-      "sha256": "e11c3a596a75715ab4d91facda9bc2ca2d40015116d6cce3beae3c8e1fef6f14",
-      "origin": "host-asset"
+      "bytes": 30665,
+      "sha256": "8bb719654fb12c0957338b51c13cfe7f3db8a87b4a2f14924a6bf6e9e286fa5a",
+      "origin": "plugins-page"
     },
     {
       "path": "web/attachments.js",
@@ -843,9 +909,9 @@
     },
     {
       "path": "web/index.html",
-      "bytes": 18291,
-      "sha256": "86bf49d9ebe2a3f845ee6f31f4cdbd9288f0785617c20a909dfd5ff8941ef8d4",
-      "origin": "host-asset"
+      "bytes": 18576,
+      "sha256": "fcef09fb17b5e57a33dbbdb9fdc75ccbd3413e305ad88be1325963658330fc24",
+      "origin": "plugins-page"
     },
     {
       "path": "web/inspiration.css",
@@ -888,6 +954,30 @@
       "bytes": 869,
       "sha256": "4daa98f2cac63ae04609385480676b5fe5defe12f32c7e80ab1cdda5d1139935",
       "origin": "host-asset"
+    },
+    {
+      "path": "web/plugin-catalog.json",
+      "bytes": 2512,
+      "sha256": "2bb62da107b18e93b8de877f4291ea138b168a8069c7a0d257f75f47b37e834d",
+      "origin": "plugins-page"
+    },
+    {
+      "path": "web/plugin-turtles.js",
+      "bytes": 4357,
+      "sha256": "a83923c1282f84359270ddda37b79f417c9b7136076a34f3f403b9a575a969fe",
+      "origin": "plugins-page"
+    },
+    {
+      "path": "web/plugins.css",
+      "bytes": 6319,
+      "sha256": "45b6d50101e488497f9782721e823f8f9538fa6db9d4ae5b6afacff8d5382cac",
+      "origin": "plugins-page"
+    },
+    {
+      "path": "web/plugins.js",
+      "bytes": 18841,
+      "sha256": "2bf9a63362efb9923e760629cadf8763f6d87b2dbbd299f77b0bb5ca36d8c75a",
+      "origin": "plugins-page"
     },
     {
       "path": "web/previews.js",
@@ -939,9 +1029,9 @@
     },
     {
       "path": "web/ui.js",
-      "bytes": 15898,
-      "sha256": "1ed99946011dba3118b25e8850603b97de720f771bd409ee097193fdf14f2c98",
-      "origin": "host-asset"
+      "bytes": 16054,
+      "sha256": "60dbd1c6927eb6f56394a9fac31799583ee6fd797f6e342145767dd7a92cdd4f",
+      "origin": "plugins-page"
     },
     {
       "path": "web/voice.js",
@@ -954,18 +1044,6 @@
       "bytes": 9331,
       "sha256": "43eb609692780f1fb828ceaa5ed7ac8ed1376d3642d84cc2705555bbc495b249",
       "origin": "host-asset"
-    },
-    {
-      "path": "docs/assets/dumbvoice-before.png",
-      "bytes": 9574,
-      "sha256": "1b457b359557112c032c5c2158fe7bfb1eebc3f9ddf5c11ce12eff48431a8de9",
-      "origin": "subproject-maintenance"
-    },
-    {
-      "path": "docs/assets/dumbvoice-after.png",
-      "bytes": 14293,
-      "sha256": "07f381096266085807c115211c435e5aa9baa5af8a24f96eb361f3673f71ee87",
-      "origin": "subproject-maintenance"
     }
   ],
   "excluded_by_default": true,

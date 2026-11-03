@@ -61,7 +61,7 @@ let nativeTimer=null,nativeBusy=false;
 let settingsTab='connections',workspaceView='now',workspaceScroll=0;
 let appReady=false;
 let toolTab='inspiration',toolResults={social:null,inspiration:null},toolPages={},jobItems=[],feedPage=0;
-const pageKey='dm-page-v1',pageViews=['now','inbox','wins','tools','git','browse','setup'];
+const pageKey='dm-page-v1',pageViews=['now','inbox','wins','tools','git','browse','plugins','setup'];
 let restoringPage=true,pageTimer=null;
 function pageHash(page){
   if(page.drawer&&page.view==='now')return '#drawer';
@@ -134,7 +134,7 @@ function selectTool(tab){
 }
 function toolAnswer(tab,result){toolResults[tab]=result;if(toolTab===tab){toolResult=result;renderTools();}}
 async function ensureModules(){
-  const modules=[['ui','DMUI'],['aquarium','DMAquarium'],['richtext','DMRich'],['previews','DMPreviews'],['t3-settings','DMT3'],['attachments','DMUploads'],['chat','DMChat'],['itches','DMItches'],['learning','DMLearning'],['research','DMResearch'],['inspiration','DMInspiration'],['git','DMGit'],['browse','DMBrowse'],['intake','DMIntake'],['social','DMSocial'],['webhook','DMWebhook'],['ai','DMAI'],['voice','DMVoice'],['bridge','DMBridge']];
+  const modules=[['ui','DMUI'],['aquarium','DMAquarium'],['richtext','DMRich'],['previews','DMPreviews'],['t3-settings','DMT3'],['attachments','DMUploads'],['chat','DMChat'],['itches','DMItches'],['learning','DMLearning'],['research','DMResearch'],['inspiration','DMInspiration'],['plugins','DMPlugins'],['git','DMGit'],['browse','DMBrowse'],['intake','DMIntake'],['social','DMSocial'],['webhook','DMWebhook'],['ai','DMAI'],['voice','DMVoice'],['bridge','DMBridge']];
   const missing=()=>modules.filter(([,name])=>!window[name]);
   if(!missing().length)return;
   const dialog=document.createElement('dialog');dialog.id='startup-recovery';dialog.className='startup-recovery';
@@ -239,17 +239,18 @@ function render(){
   document.body.classList.toggle('now-view',view==='now');
   document.body.classList.toggle('settings-view',view==='setup');
   document.body.classList.toggle('browse-view',view==='browse');
-  document.body.classList.toggle('tools-view',['tools','git','browse'].includes(view));
+  document.body.classList.toggle('plugins-view',view==='plugins');
+  document.body.classList.toggle('tools-view',['tools','git','browse','plugins'].includes(view));
   $('#capture-section').hidden=view!=='now';
   const wins=state.itches.reduce((n,r)=>n+r.outcomes.filter(o=>today(o.at)).length,0);
   $('#wins-count').textContent=String(wins).padStart(2,'0');
   const open=state.itches.filter(r=>!['resolved','archived','suggested','declined'].includes(r.state)).length;
   $('#open-count').textContent=open;$('#open-count').toggleAttribute('data-zero',!open);$('#hero-open').textContent=String(open).padStart(2,'0');
-  const tools=['tools','setup','git','browse'].includes(view);
-  $('#filters').hidden=tools;$('#feed-items').hidden=tools;$('#tool-results').hidden=!tools||['git','browse'].includes(view);$('#git-workspace').hidden=view!=='git';$('#browse-workspace').hidden=view!=='browse';
-  $('#feed-title').textContent=({now:'Open itches',inbox:'Itch pile',wins:'Today’s W’s',tools:'Side quests',git:'Git',browse:'Browse',setup:'Settings'})[view];
+  const tools=['tools','setup','git','browse','plugins'].includes(view);
+  $('#filters').hidden=tools;$('#feed-items').hidden=tools;$('#tool-results').hidden=!tools||['git','browse','plugins'].includes(view);$('#git-workspace').hidden=view!=='git';$('#browse-workspace').hidden=view!=='browse';$('#plugins-workspace').hidden=view!=='plugins';
+  $('#feed-title').textContent=({now:'Open itches',inbox:'Itch pile',wins:'Today’s W’s',tools:'Side quests',git:'Git',browse:'Browse',plugins:'Plugins',setup:'Settings'})[view];
   $('#feed-eyebrow').textContent='';
-  if(tools){if(view==='browse')DMBrowse.render();else if(view==='git')DMGit.render();else if(view==='tools')renderTools();else renderSetup();}
+  if(tools){if(view==='plugins')DMPlugins.render();else if(view==='browse')DMBrowse.render();else if(view==='git')DMGit.render();else if(view==='tools')renderTools();else renderSetup();}
   else{
     const words=$('#search').value.toLowerCase().split(/\s+/).filter(Boolean);
     const ideaFilter=filter==='suggested'&&view!=='wins',stashFilter=filter==='open'&&view!=='wins';
@@ -275,10 +276,11 @@ function setView(next,pageData=null){
   const wasSettings=view==='setup';if(next==='setup'&&!wasSettings){workspaceView=view;workspaceScroll=scrollY;}
   DMIntake.cancelSuggestions();view=next;filter='all';feedPage=0;
   document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-  $('#view-name').textContent=({now:'Now',inbox:'Itch pile',wins:'W’s',tools:'Side quests',git:'Git',browse:'Browse',setup:'Settings'})[view];
+  $('#view-name').textContent=({now:'Now',inbox:'Itch pile',wins:'W’s',tools:'Side quests',git:'Git',browse:'Browse',plugins:'Plugins',setup:'Settings'})[view];
   document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter===filter));
   render();
   let entering;
+  if(view==='plugins')entering=DMPlugins.enter();
   if(view==='git')entering=DMGit.enter(pageData?.git);
   if(view==='browse')entering=DMBrowse.enter();
   if(view==='tools'){if(toolTab==='inspiration')entering=DMInspiration.enter(pageData?.inspiration);else{entering=loadCommands(true).then(()=>renderTools()).catch(e=>toast(e.message));}}
@@ -642,7 +644,7 @@ $('#stash').onclick=()=>submit().catch(e=>toast(e.message));
 $('#moment').onclick=()=>capture(true);
 $('#search').oninput=()=>{feedPage=0;render();};
 document.addEventListener('keydown',e=>{if(e.target.matches('[data-tool-tab]')&&['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const tabs=['inspiration','social'],i=tabs.indexOf(toolTab);selectTool(tabs[e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length]);$('#tool-tab-'+toolTab).focus();}});
-$('#project').onchange=async()=>{project=$('#project').value;feedPage=0;await call('manager.context.select',{id:''});state.active_context='';renderContext();render();updateSuggestions();};
+$('#project').onchange=async()=>{project=$('#project').value;if(view==='plugins')DMPlugins.enter();feedPage=0;await call('manager.context.select',{id:''});state.active_context='';renderContext();render();updateSuggestions();};
 $('#context').onchange=async()=>{
   const id=$('#context').value;
   if(id.startsWith('thread:')){
@@ -671,7 +673,7 @@ async function init(){
   const page=savedPage();
   await ensureModules();DMUI.configure(()=>state.preferences.motion);
   await DMT3.init();
-  DMChat.init();DMIntake.init();DMItches.init();DMLearning.init();DMResearch.init();DMGit.init();DMBrowse.init();
+  DMChat.init();DMIntake.init();DMItches.init();DMLearning.init();DMResearch.init();DMGit.init();DMBrowse.init();DMPlugins.init();
   if(localStorage.getItem('dm-theme')==='light'){document.body.classList.add('light');$('#theme').textContent='Dark mode';}
   showOutbox();
   try{

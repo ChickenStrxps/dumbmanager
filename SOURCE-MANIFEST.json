@@ -123,8 +123,8 @@
     },
     {
       "path": "backend/dumbapi_core/bridge.py",
-      "bytes": 23459,
-      "sha256": "c5f355caa340f03a7ac1b928eb52843788e6dfa9cb7b1de9751e15e86d7fb254",
+      "bytes": 24231,
+      "sha256": "160821ee4faf6229dab4b1d44f268349b9592d6eaf5532e8e4a5834d561143e6",
       "origin": "core"
     },
     {
@@ -132,6 +132,12 @@
       "bytes": 4922,
       "sha256": "8d6099ab1e56ea5df3c03ff870ed5cd6a22d0fb94c3c93f4b4a23c735b30831c",
       "origin": "core"
+    },
+    {
+      "path": "backend/dumbapi_core/bridge_brief.py",
+      "origin": "public-maintenance",
+      "bytes": 2601,
+      "sha256": "4a78786f46eb13ec9e8996d94e64e516d8a50cc3c592a3993681fe8e832e8255"
     },
     {
       "path": "backend/dumbapi_core/bridge_cards.py",
@@ -195,8 +201,8 @@
     },
     {
       "path": "backend/dumbapi_core/discord_bridge.py",
-      "bytes": 27865,
-      "sha256": "762bca69939961866f87fc7c8ee64ca1a8bd61c7f1f73282626deff3dca18bbf",
+      "bytes": 34758,
+      "sha256": "b5dc8dd7ce478bcc106cc59bf8238958d942235d5da102fa8aa1c0ce6147c6bf",
       "origin": "core"
     },
     {
@@ -470,6 +476,12 @@
       "origin": "original-art"
     },
     {
+      "path": "docs/discord-repro-brief.md",
+      "origin": "public-maintenance",
+      "bytes": 1181,
+      "sha256": "2d5db4a08381c6799d615fdc8d118f147f12ed78f0528952b7435314ded8656d"
+    },
+    {
       "path": "hotkeys.py",
       "bytes": 3146,
       "sha256": "d6236bd3c956e34adb111544e70aa411306d5d0205b9ab88f6b2af646cace7b2",
@@ -531,8 +543,8 @@
     },
     {
       "path": "tests/api/test_bridge.py",
-      "bytes": 12537,
-      "sha256": "6c7c005bbe29c984a1eb7b09fda1c8a3032acba3e1a4d19e5230954452597206",
+      "bytes": 15273,
+      "sha256": "d99e918a06526ab4f95f718003333f3e5f62126d8dcaeab26907f98d17901460",
       "origin": "synthetic-tests"
     },
     {
@@ -573,8 +585,8 @@
     },
     {
       "path": "tests/api/test_discord_bridge.py",
-      "bytes": 17792,
-      "sha256": "df04b15b051b767e93a9ebad6d5166305c7122817424f0737355fe25472dd61e",
+      "bytes": 22198,
+      "sha256": "e581af09708ff57fdbf78364cb0ce1aa503d255a00cd2f7c87620d970ad8bb55",
       "origin": "synthetic-tests"
     },
     {

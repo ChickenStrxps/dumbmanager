@@ -86,6 +86,12 @@ def button(row,action,label,style=2,disabled=False):
 
 def action_row(*components):return {'type':1,'components':list(components)}
 
+def utf16_length(value):return len(str(value).encode('utf-16-le'))//2
+
+def utf16_clip(value,limit):
+    return str(value).encode('utf-16-le')[:limit*2].decode('utf-16-le','ignore')
+
+
 
 def panel(bridge,row,card=None):
     mode=row.get('panel','menu')
@@ -104,7 +110,20 @@ def panel(bridge,row,card=None):
     source_url=row['source']['url']
     if source_url.startswith('https://discord.com/channels/'):embed['url']=source_url
     controls=[]
-    if mode=='projects':
+    if mode=='brief':
+        brief=row.get('repro_brief') or {}
+        source=row.get('source',{}).get('text','')
+        embed={'title':'Repro brief - private', 'description':('Edit the five fields, then download the complete Markdown. Unknown fields remain unknown. Automatic IDs and media are omitted. Your text is not redacted; review the full file.\n\nSource snapshot: '+('INCLUDED - use Omit source to remove it.' if brief.get('include_source') else 'OMITTED - use Include source to review and include it.')), 'color':0xEB5ABC, 'fields':[], 'footer':{'text':'No provider call, itch capture or T3 send.'}}
+        for key,label in [('title','Title'),('environment','Environment'),('expected','Expected'),('observed','Observed'),('steps','Steps')]:
+            embed['fields'].append({'name':label,'value':brief.get(key) or 'Unknown'})
+        if brief.get('include_source'):
+            embed['fields'].append({'name':'Selected source snapshot (complete in file)', 'value':(source or '[No text supplied]')[:1000]})
+        brief_controls=[button(row,'briefedit','Edit brief',1),button(row,'briefsource','Omit source' if brief.get('include_source') else 'Include source'),button(row,'brieffile','Download full Markdown',1)]
+        if row.get('brief_recovery'):
+            embed['fields'].insert(0,{'name':'Recovered edit: not applied','value':'A stale submission is retained separately. Download it before retrying your edit.'})
+            brief_controls += [button(row,'briefrecovery','Download recovered edit'),button(row,'clearbriefrecovery','Discard recovered edit')]
+        controls.append(action_row(*brief_controls))
+    elif mode=='projects':
         choices=list(bridge.config.roots().items());offset=row.get('project_offset',0)
         options=[{'label':name[:100],'value':id} for id,(name,_) in choices[offset:offset+24]]
         options.insert(0,{'label':'All / unsorted','value':'_unsorted'})
@@ -147,6 +166,7 @@ def panel(bridge,row,card=None):
     else:
         controls.append(action_row(button(row,'prepare','Stash as Itch',1,bool(row['itch_id'])),
                                   button(row,'research','Research with Jev'),button(row,'related','Find Related Itches'),button(row,'chat','Chat / Send to T3')))
+    if mode=='menu':controls.append(action_row(button(row,'brief','Make repro brief')))
     frozen=bool(row.get('send_pending')) or bool(row.get('stash_pending')) and not row['itch_id']
     controls.append(action_row(button(row,'edit','Edit intake',disabled=bool(row['itch_id']) or frozen),
                               button(row,'save','Retry same stash' if row.get('stash_pending') and not row['itch_id'] else 'Save to Stashed',1,bool(row['itch_id']) or bool(row.get('send_pending'))),
@@ -156,13 +176,13 @@ def panel(bridge,row,card=None):
         embed['image']={'url':'attachment://'+card['filename']}
         if card.get('notice'):embed['footer']['text']+=' · still fallback'
     # Discord caps the combined embed text at 6000 characters. Full text stays local.
-    budget=5800-len(embed['title'])-len(embed['description'])-len(embed['footer']['text'])
+    budget=5800-utf16_length(embed['title'])-utf16_length(embed['description'])-utf16_length(embed['footer']['text'])
     kept=[]
     for field in embed['fields'][:25]:
-        size=min(1024,max(0,budget-len(field['name'])))
+        size=min(1024,max(0,budget-utf16_length(field['name'])))
         if size<30:break
-        value=str(field['value']);field={**field,'value':value if len(value)<=size else value[:size-2]+' …'}
-        kept.append(field);budget-=len(field['name'])+len(field['value'])
+        value=str(field['value']);field={**field,'value':value if utf16_length(value)<=size else utf16_clip(value,max(0,size-52))+' [EXCERPT; review complete Markdown file]'}
+        kept.append(field);budget-=utf16_length(field['name'])+utf16_length(field['value'])
     embed['fields']=kept
     return {'content':'','embeds':[embed],'components':controls[:5], 'allowed_mentions':{'parse':[]},
             'attachments':[{'id':0,'filename':card['filename']}] if card else []}
@@ -175,6 +195,14 @@ def modal(row,query=False):
         'title':'Choose a T3 thread' if query else 'Shape this itch','components':[
             {'type':18,'label':label,'component':{'type':4,'custom_id':key,'style':1 if key in ('title','query') else 2,
                 'value':value,'max_length':limit,'required':key=='title'}} for key,label,value,limit in fields]}}
+
+
+def brief_modal(row):
+    from .bridge_brief import FIELDS
+    brief=row.get('repro_brief') or {}
+    return {'type':9,'data':{'custom_id':f'db:briefedited:{row["id"]}:{row["version"]}', 'title':'Edit repro brief', 'components':[
+        {'type':18,'label':label,'component':{'type':4,'custom_id':key,'style':1 if key=='title' else 2,
+         'value':brief.get(key,''),'max_length':200 if key=='title' else 1500,'required':False}} for key,label in FIELDS]}}
 
 
 def form_values(data):
@@ -237,11 +265,15 @@ class Discord:
             if saved:
                 if saved['digest']!=digest:raise APIError('This event ID was reused with a different body.','conflict',409)
                 return json.loads(saved['response']),None
-            response,task=self.dispatch(value,actor,channel)
+            try:response,task=self.dispatch(value,actor,channel)
+            except APIError as exc:
+                custom=str(value.get('data',{}).get('custom_id',''))
+                if not custom.startswith(('db:brief','db:clearbrief')):raise
+                response={'type':4,'data':{'flags':64,'content':str(exc)[:1400]+' Use the newest controls to retry; nothing was sent.','allowed_mentions':{'parse':[]}}};task=None
             if task and not self.slots.acquire(blocking=False):
                 return {'type':4,'data':{'content':'The bridge is busy. Your draft is kept; try again shortly.','flags':64,'allowed_mentions':{'parse':[]}}},None
             try:
-                if task:task={**task,'application_id':settings['application_id']}
+                if task:task={**task,'application_id':settings['application_id'],'guild_id':str(value.get('guild_id') or '')}
                 secret=base64.b64encode(_crypt(token.encode())).decode() if task else None
                 with self.bridge.manager.db() as db:
                     db.execute('INSERT INTO bridge_events VALUES (?,?,?,?,?,?)',(event,digest,json_text(response),json_text(task) if task else None,secret,'queued' if task else 'done'))
@@ -269,13 +301,34 @@ class Discord:
             else:raise APIError('Unknown DumbBridge command.')
             envelope.update(platform='discord',channel_id=channel,guild_id=str(value.get('guild_id') or ''))
             row=self.bridge.create(envelope,actor,value['id'])
+            if row.get('discord_app') not in (None,value['application_id']):raise APIError('This draft belongs to another app. Invoke the command again.','forbidden',403)
+            if not row.get('discord_app'):row=self.bridge.mutate(row['id'],actor,{'discord_app':value['application_id']})
             return {'type':4,'data':{**panel(self.bridge,row),'flags':64}}, {'id':row['id'],'actor':actor,'action':'card'}
         if kind not in (3,5):raise APIError('Unsupported interaction type.')
         match=re.fullmatch(r'db:([a-z]+):([a-f0-9]{32}):([0-9]+)',str(data.get('custom_id','')))
         if not match:raise APIError('Unknown DumbBridge control.')
         action,id,version=match.groups();version=int(version);row=self.bridge.get(id,actor)
+        if row.get('discord_app')!=value['application_id'] or row['source'].get('guild_id','')!=str(value.get('guild_id') or ''):
+            raise APIError('This card belongs to another app/server or predates secure binding. Invoke DumbBridge on the source again.','forbidden',403)
         if row['source']['channel_id']!=channel:raise APIError('This card belongs to another channel.','forbidden',403)
-        if row['version']!=version: return {'type':7,'data':panel(self.bridge,row)},None
+        if row['version']!=version:
+            if kind==5 and action=='briefedited':
+                from .bridge_brief import clean_fields
+                values=clean_fields(form_values(data))
+                row=self.bridge.mutate(id,actor,{'brief_recovery':values,'panel':'brief','notice':'Not applied: the draft changed. Your submitted edit is available as recovery Markdown.'},row['version'])
+            return {'type':7,'data':panel(self.bridge,row)},None
+        if action=='clearbriefrecovery':
+            row=self.bridge.mutate(id,actor,{'brief_recovery':None},version)
+            return {'type':7,'data':panel(self.bridge,row)},None
+        if action=='briefedit':return brief_modal(row),None
+        if action=='briefedited':
+            row=self.bridge.edit_brief(id,actor,form_values(data),version)
+            return {'type':7,'data':panel(self.bridge,row)},None
+        if action in ('brief','briefsource'):
+            brief=dict(row.get('repro_brief') or {})
+            if action=='briefsource':brief['include_source']=not brief.get('include_source',False)
+            row=self.bridge.mutate(id,actor,{'panel':'brief','repro_brief':brief},version)
+            return {'type':7,'data':panel(self.bridge,row)},None
         if action in ('edit','threadsearch'):
             if action=='edit':
                 if row['itch_id']:raise APIError('This intake is already saved.')
@@ -292,7 +345,7 @@ class Discord:
         if action=='searchsubmit':task['query']=form_values(data).get('query','')[:100]
         if action in ('project','thread','link'):task['value']=(data.get('values') or [''])[0]
         allowed={'prepare','save','research','related','chat','projects','nextprojects','prevprojects','project','threads','thread',
-                 'searchsubmit','menu','vibe','send','replies','link','continue','cancel','append'}
+                 'searchsubmit','menu','vibe','send','replies','link','continue','cancel','append','brieffile','briefrecovery'}
         if action not in allowed:raise APIError('Unknown DumbBridge action.')
         return {'type':6},task
 
@@ -313,15 +366,24 @@ class Discord:
                 id=next(iter(self.card_queue));event,actor,version,queued=self.card_queue.pop(id)
             try:
                 if time.monotonic()-queued>300 or self.bridge.get(id,actor)['version']!=version:continue
+                if not self.authorized(event,self.bridge.get(id,actor)):continue
                 card=self.bridge.card(id,actor);row=self.bridge.get(id,actor)
                 if row['version']==version:self.deliver(event,panel(self.bridge,row,card),card)
             except Exception:
                 try:
                     row=self.bridge.get(id,actor)
-                    if row['version']==version:
+                    if row['version']==version and self.authorized(event,row):
                         payload=panel(self.bridge,row);payload['content']='ASCII card unavailable for this reply. Your text and controls are ready; Another vibe retries the render.'
                         self.deliver(event,payload)
                 except Exception:pass
+
+    def authorized(self,event,row):
+        task=json.loads(event['task']);options=self.bridge.options()
+        return (options['enabled'] and options['application_id']==task.get('application_id')
+            and row.get('discord_app')==task.get('application_id')
+            and row['source'].get('guild_id','')==task.get('guild_id','')
+            and task['actor'].removeprefix('discord:') in options['users']
+            and (not options['channels'] or row['source']['channel_id'] in options['channels']))
 
     def work(self,event):
         bridge=self.bridge
@@ -332,10 +394,20 @@ class Discord:
         try:
             try:
                 row=bridge.get(id,actor)
-                options=bridge.options()
-                if not options['enabled'] or options['application_id']!=task.get('application_id') or actor.removeprefix('discord:') not in options['users'] or options['channels'] and row['source']['channel_id'] not in options['channels']:
-                    raise APIError('This queued action is no longer enabled. Your draft is kept.')
+                if not self.authorized(hit,row):
+                    with bridge.manager.db() as db:db.execute("UPDATE bridge_events SET state='done',secret=NULL WHERE id=?",(event,))
+                    return  # Revoked work must not mutate or return its private draft.
                 if action!='card' and row['version']!=task['version']:raise APIError('This card changed. Use its newest controls.','conflict',409)
+                if action in ('brieffile','briefrecovery'):
+                    from .bridge_brief import render
+                    if action=='briefrecovery':
+                        if not row.get('brief_recovery'):raise APIError('No recovered edit remains.')
+                        row={**row,'repro_brief':{**row['brief_recovery'],'include_source':False}}
+                    content=render(row).encode('utf-8')
+                    file={'filename':'repro-brief.md','mime':'text/markdown; charset=utf-8','data':base64.b64encode(content).decode()}
+                    self.deliver(hit,{'content':'Complete private Markdown brief. Review before sharing.','allowed_mentions':{'parse':[]},'attachments':[{'id':0,'filename':file['filename']}]},file)
+                    with bridge.manager.db() as db:db.execute("UPDATE bridge_events SET state='done',secret=NULL WHERE id=?",(event,))
+                    return
                 if action=='prepare':row=bridge.generate(id,actor)
                 elif action=='save':row=bridge.stash(id,actor,task['version'])
                 elif action=='related':row=bridge.related(id,actor);row=bridge.mutate(id,actor,{'panel':'related'})
@@ -377,6 +449,9 @@ class Discord:
             except Exception as exc:
                 note=str(exc) if isinstance(exc,APIError) else 'This action could not finish. Your draft is kept; try its newest controls.'
                 row=bridge.get(id,actor)
+                if not self.authorized(hit,row):
+                    with bridge.manager.db() as db:db.execute("UPDATE bridge_events SET state='done',secret=NULL WHERE id=?",(event,))
+                    return
                 row=bridge.mutate(id,actor,{'notice':note[:600]})
                 self.deliver(hit,panel(bridge,row))
             with bridge.manager.db() as db:db.execute("UPDATE bridge_events SET state='done',secret=NULL WHERE id=?",(event,))
@@ -386,6 +461,8 @@ class Discord:
         finally:self.slots.release()
 
     def deliver(self,event,payload,card=None):
+        task=json.loads(event['task'])
+        if not self.authorized(event,self.bridge.get(task['id'],task['actor'])):return
         token=_crypt(base64.b64decode(event['secret']),decrypt=True).decode()
         app=json.loads(event['task'])['application_id']
         url=f'https://discord.com/api/v10/webhooks/{app}/{quote(token,safe="")}/messages/@original'

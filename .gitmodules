@@ -1,3 +1,6 @@
 [submodule "projects/dumb-lighting"]
 	path = projects/dumb-lighting
 	url = https://github.com/ChickenStrxps/dumb-lighting.git
+[submodule "projects/dumbvoice"]
+	path = projects/dumbvoice
+	url = https://github.com/ChickenStrxps/dumbvoice.git

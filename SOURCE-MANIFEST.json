@@ -27,8 +27,8 @@
     },
     {
       "path": ".gitmodules",
-      "bytes": 126,
-      "sha256": "ffae7ddd150a34372d57240b7c7028b5aa42f06fba310dba1b9afd040b58ac33",
+      "bytes": 246,
+      "sha256": "b1c72d2b92cf0228967743d4f1b6c5a80ddc8042706372f8903c7b3c2c510253",
       "origin": "subproject-maintenance"
     },
     {
@@ -51,8 +51,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 3749,
-      "sha256": "2c5c7653e7cd9af8133a6cf646afcdf07b6de75c6dd121d14ecaac70ad5a70e5",
+      "bytes": 4125,
+      "sha256": "4e02e7efde7af578484c7c01130d797e9c935c602c1880662e6d6dce69d7d03a",
       "origin": "subproject-maintenance"
     },
     {
@@ -435,8 +435,8 @@
     },
     {
       "path": "docs/SUBPROJECTS.md",
-      "bytes": 1393,
-      "sha256": "ad50168d85c52ecbc6fe9103155f652d8918dfb34e328fff6451c4af69e1d356",
+      "bytes": 2561,
+      "sha256": "fcc11b3ee1285f839670c33490a8e2899f47172ec86fb5d3c5268c14a9cbf333",
       "origin": "subproject-maintenance"
     },
     {
@@ -954,6 +954,18 @@
       "bytes": 9331,
       "sha256": "43eb609692780f1fb828ceaa5ed7ac8ed1376d3642d84cc2705555bbc495b249",
       "origin": "host-asset"
+    },
+    {
+      "path": "docs/assets/dumbvoice-before.png",
+      "bytes": 9574,
+      "sha256": "1b457b359557112c032c5c2158fe7bfb1eebc3f9ddf5c11ce12eff48431a8de9",
+      "origin": "subproject-maintenance"
+    },
+    {
+      "path": "docs/assets/dumbvoice-after.png",
+      "bytes": 14293,
+      "sha256": "07f381096266085807c115211c435e5aa9baa5af8a24f96eb361f3673f71ee87",
+      "origin": "subproject-maintenance"
     }
   ],
   "excluded_by_default": true,
@@ -962,6 +974,13 @@
       "path": "projects/dumb-lighting",
       "url": "https://github.com/ChickenStrxps/dumb-lighting.git",
       "commit": "3828354017e6a01c49ae2fec369d093d7f87e327",
+      "optional": true,
+      "visibility": "private"
+    },
+    {
+      "path": "projects/dumbvoice",
+      "url": "https://github.com/ChickenStrxps/dumbvoice.git",
+      "commit": "a18bea10e4a8eaa2ed2bfc45e79243f9af6f4d6b",
       "optional": true,
       "visibility": "private"
     }

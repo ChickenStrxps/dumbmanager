@@ -63,6 +63,11 @@ lighting presets with a quiet Windows app switcher. It has its own repository,
 pull requests and checks; this repository pins its version at
 `projects/dumb-lighting` as a Git submodule.
 
-The lighting repository is private and requires separate access. It is optional:
-DumbManager runs and builds without initializing it. See
+[DumbVoice](https://github.com/ChickenStrxps/dumbvoice) is a native Windows
+dictation overlay with local recognition, personal vocabulary and optional typing
+into the focused field. It has its own repository, pull requests and checks,
+pinned at `projects/dumbvoice` as a Git submodule.
+
+Both subproject repositories are private and require separate access. They are
+optional: DumbManager runs and builds without initializing either one. See
 [subproject setup](docs/SUBPROJECTS.md) for selective checkout and version updates.

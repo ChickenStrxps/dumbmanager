@@ -31,3 +31,32 @@ git add projects/dumb-lighting
 Update the corresponding `submodules` entry in `SOURCE-MANIFEST.json`, then open a
 parent PR. Keep the module optional and do not add recursive checkout or private
 credentials to public CI. Existing app builds and releases remain independent.
+
+## DumbVoice
+
+`projects/dumbvoice` is an optional Git submodule pointing to the private
+[DumbVoice repository](https://github.com/ChickenStrxps/dumbvoice), formerly Voice
+Dock. It provides native Windows dictation with local speech recognition,
+personal vocabulary and optional insertion into the focused editable field.
+Its source, history, pull requests and checks stay in that repository.
+
+With separate repository access, initialize only this subproject:
+
+```sh
+git submodule update --init projects/dumbvoice
+```
+
+Follow the child's README to build and install it. Checkout never starts the app,
+captures audio or imports settings. The module is absent from source ZIPs and
+optional for parent builds and CI. Public CI does not fetch it or need credentials.
+
+Land changes in the child first, then update the reviewed pin:
+
+```sh
+git -C projects/dumbvoice fetch origin
+git -C projects/dumbvoice checkout <reviewed-child-commit>
+git add projects/dumbvoice
+```
+
+Update its `submodules` entry in `SOURCE-MANIFEST.json` in the same parent PR.
+Both subprojects can be initialized and updated independently.

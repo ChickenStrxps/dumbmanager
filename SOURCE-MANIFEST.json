@@ -27,8 +27,8 @@
     },
     {
       "path": ".gitmodules",
-      "bytes": 246,
-      "sha256": "b1c72d2b92cf0228967743d4f1b6c5a80ddc8042706372f8903c7b3c2c510253",
+      "bytes": 240,
+      "sha256": "d04e60059a9a846226a0251134c66733934e34c7712b3efc9bbaed4189ac1368",
       "origin": "subproject-maintenance"
     },
     {
@@ -51,8 +51,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 4125,
-      "sha256": "4e02e7efde7af578484c7c01130d797e9c935c602c1880662e6d6dce69d7d03a",
+      "bytes": 4052,
+      "sha256": "1f88dc0ebe74c8f1180602d20878ef2bceda909b6936be020edd9727a34d36b8",
       "origin": "subproject-maintenance"
     },
     {
@@ -435,8 +435,8 @@
     },
     {
       "path": "docs/SUBPROJECTS.md",
-      "bytes": 2561,
-      "sha256": "fcc11b3ee1285f839670c33490a8e2899f47172ec86fb5d3c5268c14a9cbf333",
+      "bytes": 2499,
+      "sha256": "fdcfc79f3ebbe51d481011846126b350217f21c9d1c2e908e99ffbd5554713dc",
       "origin": "subproject-maintenance"
     },
     {

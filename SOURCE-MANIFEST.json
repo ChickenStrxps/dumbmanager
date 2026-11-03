@@ -961,7 +961,7 @@
     {
       "path": "projects/dumb-lighting",
       "url": "https://github.com/ChickenStrxps/dumb-lighting.git",
-      "commit": "b43f842238c81c4c03a9da6cfe5e85be5de22c03",
+      "commit": "3828354017e6a01c49ae2fec369d093d7f87e327",
       "optional": true,
       "visibility": "private"
     }

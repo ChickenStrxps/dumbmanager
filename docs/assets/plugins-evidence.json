@@ -1,0 +1,51 @@
+{
+  "capture": "Actual shared frontend served by the Python host with disposable state and synthetic project/tool/T3 fixtures. Rust native domain behavior checked separately with four unit tests; no native app window capture.",
+  "before_source": "e5f36f304d07d457f91bb022024e08559243817b",
+  "after_frontend_hashes": {
+    "plugins.js": "2bf9a63362efb9923e760629cadf8763f6d87b2dbbd299f77b0bb5ca36d8c75a",
+    "plugins.css": "45b6d50101e488497f9782721e823f8f9538fa6db9d4ae5b6afacff8d5382cac",
+    "plugin-turtles.js": "a83923c1282f84359270ddda37b79f417c9b7136076a34f3f403b9a575a969fe",
+    "app.js": "1098d69b52486112b7733b317b3bd19336db5b64becb622101effc7c3f8d4a97",
+    "aquarium.js": "8bb719654fb12c0957338b51c13cfe7f3db8a87b4a2f14924a6bf6e9e286fa5a",
+    "index.html": "fcef09fb17b5e57a33dbbdb9fdc75ccbd3413e305ad88be1325963658330fc24"
+  },
+  "checks": {
+    "edition": "Python backend + shared frontend",
+    "temporary_state": true,
+    "install_copy_remove": true,
+    "planned_rejected": true,
+    "project_signals": [
+      "rust"
+    ],
+    "thread_destination_verified": true,
+    "synthetic_t3_attempts": 2,
+    "immutable_retry": true,
+    "cross_tool_retry_guard": true,
+    "visible_custom_paths_sent": true,
+    "live_t3_sends": 0,
+    "shelf_reload": true,
+    "widths": [
+      1440,
+      1024,
+      390,
+      320
+    ],
+    "turtle_atlas": {
+      "poses": 12,
+      "maxPoses": 12,
+      "bytes": 7079424
+    },
+    "cached_draw_ms": 0.01999999980131785,
+    "pause_verified": true,
+    "javascript_errors": [],
+    "discovery_fixture": true
+  },
+  "visual_approval": "User approved the look and motion in the task conversation on 2026-11-03.",
+  "live_t3_sends": 0,
+  "target_base": "e5f36f304d07d457f91bb022024e08559243817b",
+  "shared_plugin_hashes": {
+    "plugins.js": "2bf9a63362efb9923e760629cadf8763f6d87b2dbbd299f77b0bb5ca36d8c75a",
+    "plugins.css": "45b6d50101e488497f9782721e823f8f9538fa6db9d4ae5b6afacff8d5382cac",
+    "plugin-turtles.js": "a83923c1282f84359270ddda37b79f417c9b7136076a34f3f403b9a575a969fe"
+  }
+}

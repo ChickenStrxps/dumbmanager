@@ -2,7 +2,7 @@
 from pathlib import Path
 ROOT=Path(SPECPATH).parent
 datas=[(str(ROOT/'web'),'web')]
-for name in ['social_gif.js','ascii_smoke.js','social_image.ps1']:
+for name in ['social_gif.js','ascii_smoke.js','social_image.ps1','plugin-catalog.json']:
     datas.append((str(ROOT/'backend'/'dumbapi_core'/name),'dumbapi_core'))
 a=Analysis([str(ROOT/'run.py')],pathex=[str(ROOT),str(ROOT/'backend')],
            binaries=[],datas=datas,hiddenimports=['native','app','tkinter','dumbapi_core.workspace',

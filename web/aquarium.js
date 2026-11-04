@@ -427,6 +427,7 @@ window.DMAquarium=(()=>{
   }
   function draw(){
     if(!cols)return;
+    if(document.body.classList.contains('plugins-view')&&window.DMPluginTurtles){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,innerWidth,innerHeight);DMPluginTurtles.draw(ctx,time,colors,light());drawFx();return;}
     mctx.clearRect(0,0,cols,rows);mctx.globalCompositeOperation='lighter';
     sharks.forEach(s=>{shape(s,1,.5);shape(s,.5,.5);});
     mctx.globalCompositeOperation='source-over';
@@ -473,6 +474,6 @@ window.DMAquarium=(()=>{
   themeWas=light();grain();resize();
   // let the sharks settle into a natural curve before the first still frame
   for(let i=0;i<40;i++)step(.05);draw();sync();
-  document.fonts?.ready?.then(()=>{squidCache=null;smokeCache=null;draw();});
+  document.fonts?.ready?.then(()=>{squidCache=null;smokeCache=null;window.DMPluginTurtles?.invalidate();draw();});
   return {redraw:()=>{readColors();planet();draw();},celebrate};
 })();

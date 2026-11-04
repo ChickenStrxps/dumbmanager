@@ -1,0 +1,6 @@
+{
+  "capture": "Actual shared frontend, Python host in headless Edge with disposable data and blocked external requests; no installed app changed.",
+  "before_source": "60dbd1c6927eb6f56394a9fac31799583ee6fd797f6e342145767dd7a92cdd4f",
+  "after_source": "f3a68c59946ffb3dda15424fcce2cc53fa9a7a174d08b98a114a368387b7ddc1",
+  "verification": "Matching 9x9 grids across editions; icon size, inherited color, crisp edges, decorative semantics and other navigation SVGs preserved; reload and widths 1440/1024/390/320 pass; no JavaScript errors."
+}

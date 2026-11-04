@@ -27,8 +27,8 @@
     },
     {
       "path": ".gitmodules",
-      "bytes": 240,
-      "sha256": "d04e60059a9a846226a0251134c66733934e34c7712b3efc9bbaed4189ac1368",
+      "bytes": 351,
+      "sha256": "0ee53ced1808bf3f049b0cd46151b0d5d1b870b00774f79db26a7a8642b82018",
       "origin": "subproject-maintenance"
     },
     {
@@ -1077,6 +1077,13 @@
       "path": "projects/dumbvoice",
       "url": "https://github.com/ChickenStrxps/dumbvoice.git",
       "commit": "a18bea10e4a8eaa2ed2bfc45e79243f9af6f4d6b",
+      "optional": true,
+      "visibility": "private"
+    },
+    {
+      "path": "projects/dumbplay",
+      "url": "https://github.com/ChickenStrxps/dumbplay.git",
+      "commit": "24b7c390e1dc38ff96dfada83f1b6c35bb8469b0",
       "optional": true,
       "visibility": "private"
     }

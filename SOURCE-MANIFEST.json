@@ -512,6 +512,24 @@
       "origin": "plugins-page"
     },
     {
+      "path": "docs/assets/plugins-icon-after.png",
+      "bytes": 6778,
+      "sha256": "3015d4fb505e35d07df505dff94615c38bd83bc1a25c8e62b42d0878d9f2b96c",
+      "origin": "plugins-icon-refresh"
+    },
+    {
+      "path": "docs/assets/plugins-icon-before.png",
+      "bytes": 6555,
+      "sha256": "e9bdee73148d844840ddcea90a736f2c3e9847e375b61fd9196ab25f9a078564",
+      "origin": "plugins-icon-refresh"
+    },
+    {
+      "path": "docs/assets/plugins-icon-evidence.json",
+      "bytes": 543,
+      "sha256": "2144938b32c157d026fe9b1c6b5bb55cedd0e8777dad8e57508be45cb6509b09",
+      "origin": "plugins-icon-refresh"
+    },
+    {
       "path": "docs/assets/plugins-install.png",
       "bytes": 234817,
       "sha256": "5f4e70ec3a4e92f141e8144592f530be8b5564c1df32ca9210ba121e8aba4f87",
@@ -1030,7 +1048,7 @@
     {
       "path": "web/ui.js",
       "bytes": 16054,
-      "sha256": "60dbd1c6927eb6f56394a9fac31799583ee6fd797f6e342145767dd7a92cdd4f",
+      "sha256": "f3a68c59946ffb3dda15424fcce2cc53fa9a7a174d08b98a114a368387b7ddc1",
       "origin": "plugins-page"
     },
     {
